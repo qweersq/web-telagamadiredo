@@ -100,21 +100,16 @@ const HIGHLIGHTS = [
 
 const TICKETS = [
   {
-    name: 'Tiket Masuk Weekday',
-    price: '10.000',
-    unit: 'per orang',
-    note: 'Berlaku Senin sampai Jumat. Sudah termasuk akses seluruh area telaga, taman, dan playground.',
-    items: ['Senin – Jumat', 'Anak & dewasa tarif sama', 'Bayar tunai / QRIS di loket'],
-    featured: false,
-  },
-  {
-    name: 'Tiket Masuk Weekend',
+    name: 'Tiket Masuk Harian',
     price: '15.000',
     unit: 'per orang',
-    note: 'Berlaku Sabtu, Minggu, dan hari libur nasional. Harga dapat menyesuaikan saat event besar.',
-    items: ['Sabtu – Minggu', 'Termasuk libur nasional', 'Bayar tunai / QRIS di loket'],
+    note: 'Berlaku setiap hari, termasuk Sabtu, Minggu, dan libur nasional. Sudah termasuk akses seluruh area telaga, taman, dan playground.',
+    items: [
+      'Berlaku setiap hari',
+      'Anak & dewasa tarif sama',
+      'Bayar langsung di loket (tunai / QRIS)',
+    ],
     featured: true,
-    badge: 'Weekend',
   },
 ];
 
@@ -142,7 +137,7 @@ const FAQS = [
   },
   {
     q: 'Berapa harga tiket masuknya?',
-    a: 'Tiket masuk Rp10.000 per orang pada hari kerja dan Rp15.000 per orang pada Sabtu, Minggu, serta hari libur nasional. Tarif anak dan dewasa sama, dan tiket sudah termasuk akses area telaga, taman, serta playground.',
+    a: 'Tiket masuk Rp15.000 per orang, berlaku setiap hari termasuk Sabtu, Minggu, dan hari libur nasional. Tarif anak dan dewasa sama, dan tiket sudah termasuk akses area telaga, taman, serta playground. Pembayaran dilakukan langsung di loket (tunai atau QRIS).',
   },
   {
     q: 'Apakah bisa reservasi rombongan?',
@@ -351,7 +346,7 @@ const LandingPage = () => {
               className="inline-flex items-center gap-2 rounded-full bg-senja-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-senja-500/30 transition hover:bg-senja-600"
             >
               <FaWhatsapp />
-              Pesan Tiket
+              Tanya Tiket
             </a>
           </div>
 
@@ -433,14 +428,14 @@ const LandingPage = () => {
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <a
                 href={waLink(
-                  'Halo Telaga Madiredo, saya ingin memesan tiket / bertanya jadwal kunjungan.'
+                  'Halo Telaga Madiredo, saya ingin bertanya soal tiket masuk / jadwal kunjungan.'
                 )}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 rounded-full bg-telaga-700 px-6 py-3 text-sm font-semibold text-white shadow-xl shadow-telaga-700/25 transition hover:bg-telaga-800"
               >
                 <FaTicketAlt />
-                Pesan Tiket via WhatsApp
+                Tanya Tiket via WhatsApp
               </a>
               <button
                 type="button"
@@ -455,7 +450,7 @@ const LandingPage = () => {
             <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-xs text-telaga-900/70 sm:text-sm">
               {[
                 { icon: FaClock, text: 'Buka 08.00 – 17.00 WIB' },
-                { icon: FaTicketAlt, text: 'Tiket mulai Rp10.000' },
+                { icon: FaTicketAlt, text: 'Tiket Rp15.000' },
                 { icon: FaStar, text: '4,6 di Google Maps' },
               ].map((item) => (
                 <span key={item.text} className="inline-flex items-center gap-2">
@@ -481,7 +476,7 @@ const LandingPage = () => {
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-telaga-600">
                 Tiket masuk
               </p>
-              <p className="font-bebas text-2xl leading-none text-telaga-950">10K</p>
+              <p className="font-bebas text-2xl leading-none text-telaga-950">15K</p>
             </div>
 
             <div className="absolute -right-2 bottom-10 rounded-2xl bg-senja-500 px-4 py-3 text-white shadow-xl shadow-senja-600/30 sm:-right-5">
@@ -507,8 +502,8 @@ const LandingPage = () => {
             {
               icon: FaTicketAlt,
               label: 'Tiket Masuk',
-              value: 'Rp10.000',
-              sub: 'Weekend Rp15.000',
+              value: 'Rp15.000',
+              sub: 'Bayar langsung di loket',
             },
             {
               icon: FaMapMarkerAlt,
@@ -576,7 +571,7 @@ const LandingPage = () => {
           <div className="grid gap-4 sm:grid-cols-2">
             {[
               { value: '1 jam', label: 'Dari Kota Malang', tone: 'green' },
-              { value: '10K', label: 'Tiket masuk weekday', tone: 'orange' },
+              { value: '15K', label: 'Tiket masuk / orang', tone: 'orange' },
               { value: '08–17', label: 'Jam buka weekend', tone: 'orange' },
               { value: '09–16', label: 'Jam buka weekday', tone: 'green' },
             ].map((stat) => (
@@ -731,12 +726,12 @@ const LandingPage = () => {
               Cukup bayar tiket masuk
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-telaga-100/75 sm:text-base">
-              Saat ini hanya tiket masuk harian yang diberlakukan. Parkir dan
-              wahana air dibayar terpisah langsung di lokasi.
+              Satu harga tiket masuk untuk semua hari. Pembayaran dilakukan
+              langsung di loket, parkir dan wahana air dibayar terpisah di lokasi.
             </p>
           </div>
 
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:max-w-3xl">
+          <div className="mt-10 max-w-md">
             {TICKETS.map((ticket) => (
               <div
                 key={ticket.name}
@@ -811,8 +806,8 @@ const LandingPage = () => {
 
           <p className="mt-6 flex items-start gap-2 text-xs leading-relaxed text-telaga-100/55">
             <FaLeaf className="mt-0.5 shrink-0" />
-            Harga tiket masuk dapat berubah pada hari libur atau saat ada acara.
-            Konfirmasi tarif terbaru lewat WhatsApp sebelum berkunjung.
+            Harga tiket masuk Rp15.000 per orang dan dibayar langsung di loket.
+            Tarif dapat berubah saat ada acara khusus.
           </p>
         </div>
       </section>
