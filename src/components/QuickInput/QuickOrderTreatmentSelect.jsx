@@ -1,11 +1,11 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import dayjs from 'dayjs';
-import { CheckCircle, Trash2, Search, Plus, AlertCircle, Ticket } from 'lucide-react';
+import { CheckCircle, Trash2, Search, Plus, AlertCircle, Ticket, ShoppingCart, ChevronUp, X } from 'lucide-react';
 import QuantityInput from '../Design/QuantityInput';
 import AnimatedButton from '../Design/AnimatedButton';
 import QuickOrderItemCard from './QuickOrderItemCard';
 
-const QuickOrderTreatmentSelect = ({ treatments, selectedTreatments, setSelectedTreatments, updateTreatmentDetail, discounts, customerId = null, onOpenAIDetection, isCafeMode = false, layout = 'stacked', customerSlot = null, outletMode = null }) => {
+const QuickOrderTreatmentSelect = ({ treatments, selectedTreatments, setSelectedTreatments, updateTreatmentDetail, discounts, customerId = null, onOpenAIDetection, isCafeMode = false, layout = 'stacked', customerSlot = null, outletMode = null, onContinue = null, canContinue = true, continueLabel = 'Lanjut ke Pembayaran' }) => {
   const isSplitLayout = layout === 'split';
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState(''); // Filter chip kategori di panel picker
@@ -19,7 +19,25 @@ const QuickOrderTreatmentSelect = ({ treatments, selectedTreatments, setSelected
   const [showTreatmentModal, setShowTreatmentModal] = useState(false); // Modal untuk pilih treatment
   const [useCustomPrice, setUseCustomPrice] = useState(false); // Toggle untuk custom price
   const [fillItemDetails, setFillItemDetails] = useState(false); // Toggle untuk isi detail item
+  const [showMobileCart, setShowMobileCart] = useState(false); // Sheet keranjang + data customer (mobile)
+  const [toastMessage, setToastMessage] = useState(''); // Notifikasi singkat setelah item masuk keranjang
   const prevValues = useRef({});
+
+  // Kunci scroll body selama sheet keranjang terbuka.
+  useEffect(() => {
+    if (!showMobileCart) return undefined;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [showMobileCart]);
+
+  useEffect(() => {
+    if (!toastMessage) return undefined;
+    const timer = setTimeout(() => setToastMessage(''), 2200);
+    return () => clearTimeout(timer);
+  }, [toastMessage]);
 
   // Dine-in / bawa pulang ditentukan per item. Loket selalu bawa pulang.
   const defaultServeMode = isCafeMode ? 'dine-in' : 'takeaway';
@@ -215,7 +233,7 @@ const QuickOrderTreatmentSelect = ({ treatments, selectedTreatments, setSelected
   // Pilih item langsung dari grid (layout split) → buka modal detail yang sama
   // dengan alur "Tambah" lama. Alur simpan tetap lewat `handleAddToCart`.
   const handlePickTreatment = (treatment) => {
-    if (!customerId) return;
+    // Klik produk langsung membuka modal qty/detail, tanpa lewat keranjang.
     setAddModal(augmentModalData({
       treatment,
       discount: null,
@@ -344,6 +362,7 @@ const QuickOrderTreatmentSelect = ({ treatments, selectedTreatments, setSelected
     setAddError('');
     setUseCustomPrice(false); // Reset custom price toggle
     setFillItemDetails(false); // Reset fill item details toggle
+    if (isSplitLayout) setToastMessage(`${treatment.name} ditambahkan ke keranjang`);
   };
 
   // Remove from keranjang
@@ -414,9 +433,7 @@ const QuickOrderTreatmentSelect = ({ treatments, selectedTreatments, setSelected
             Pilih Produk &amp; Paket
           </h3>
           <p className="truncate font-montserrat text-[11px] text-telaga-900/50">
-            {customerId
-              ? `${pickerTreatments.length} item tersedia`
-              : 'Pilih pelanggan dulu untuk menambah item'}
+            {`${pickerTreatments.length} item tersedia`}
           </p>
         </div>
         {outletLabel && (
@@ -500,10 +517,8 @@ const QuickOrderTreatmentSelect = ({ treatments, selectedTreatments, setSelected
                 <button
                   key={treatment.id}
                   type="button"
-                  disabled={!customerId}
                   onClick={() => handlePickTreatment(treatment)}
-                  title={customerId ? undefined : 'Pilih pelanggan terlebih dahulu'}
-                  className="group relative flex min-h-[4.75rem] flex-col items-start justify-between rounded-xl border border-telaga-100 bg-white p-2.5 text-left transition-colors hover:border-telaga-400 hover:bg-telaga-50/60 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-[5.25rem] sm:p-3 lg:min-h-[5.5rem]"
+                  className="group relative flex min-h-[4.75rem] flex-col items-start justify-between rounded-xl border border-telaga-100 bg-white p-2.5 text-left transition-colors hover:border-telaga-400 hover:bg-telaga-50/60 active:scale-[0.98] sm:min-h-[5.25rem] sm:p-3 lg:min-h-[5.5rem]"
                 >
                   {inCartQty > 0 && (
                     <span className="absolute right-1.5 top-1.5 rounded-full bg-telaga-500 px-1.5 py-0.5 font-montserrat text-[10px] font-bold text-white sm:right-2 sm:top-2">
@@ -757,10 +772,16 @@ const QuickOrderTreatmentSelect = ({ treatments, selectedTreatments, setSelected
           ))}
         </div>
       </div>
+    </div>
+  );
 
+  // Modal qty/detail dipakai di semua layout → dirender di luar panel keranjang
+  // supaya tetap muncul walau panel keranjang disembunyikan di mobile.
+  const modalsSection = (
+    <>
       {/* Modal pilih detail sebelum add ke keranjang */}
       {addModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-6 sm:p-8" style={{
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[80] p-6 sm:p-8" style={{
           paddingTop: 'max(2rem, env(safe-area-inset-top))',
           paddingBottom: 'max(2rem, env(safe-area-inset-bottom))',
           paddingLeft: 'max(2rem, env(safe-area-inset-left))',
@@ -1055,7 +1076,7 @@ const QuickOrderTreatmentSelect = ({ treatments, selectedTreatments, setSelected
 
       {/* Modal Pilih Treatment */}
       {showTreatmentModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-6 sm:p-8" style={{
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[80] p-6 sm:p-8" style={{
           paddingTop: 'max(2rem, env(safe-area-inset-top))',
           paddingBottom: 'max(2rem, env(safe-area-inset-bottom))',
           paddingLeft: 'max(2rem, env(safe-area-inset-left))',
@@ -1150,22 +1171,137 @@ const QuickOrderTreatmentSelect = ({ treatments, selectedTreatments, setSelected
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 
   if (isSplitLayout) {
+    const itemCount = selectedTreatments.length;
+    const subtotal = selectedTreatments.reduce((sum, item) => sum + getTotal(item), 0);
+    const canProceed = canContinue && itemCount > 0 && Boolean(customerId);
+
+    const handleMobileContinue = () => {
+      setShowMobileCart(false);
+      if (onContinue) onContinue();
+    };
+
     return (
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,0.85fr)] xl:gap-5">
-        {pickerSection}
-        <div className="flex min-w-0 flex-col gap-4">
-          {customerSlot}
-          {cartSection}
+      <>
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,0.85fr)] xl:gap-5">
+          {pickerSection}
+          {/* Kolom kanan hanya untuk desktop; di mobile dipindah ke sheet keranjang. */}
+          <div className="hidden min-w-0 flex-col gap-4 lg:flex">
+            {customerSlot}
+            {cartSection}
+          </div>
         </div>
-      </div>
+
+        {/* Bar keranjang — mobile only, selalu tampil di step input */}
+        <button
+          type="button"
+          onClick={() => setShowMobileCart(true)}
+          className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-3 lg:hidden"
+          aria-label="Buka keranjang"
+        >
+          <div className="flex w-full max-w-md items-center justify-between gap-3 rounded-2xl border border-telaga-100 bg-white px-4 py-2.5 shadow-[0_8px_24px_rgba(15,23,42,0.18)]">
+            <div className="flex items-center gap-2.5">
+              <div className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-telaga-100 bg-telaga-50">
+                <ShoppingCart size={17} className="text-telaga-600" />
+                {itemCount > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 min-w-[18px] rounded-full bg-senja-500 px-1 text-center font-montserrat text-[10px] font-bold leading-[18px] text-white">
+                    {itemCount}
+                  </span>
+                )}
+              </div>
+              <span className="font-montserrat text-sm font-bold text-telaga-900">Keranjang</span>
+            </div>
+            <ChevronUp size={18} className="text-telaga-500" />
+          </div>
+        </button>
+
+        {/* Sheet keranjang + data pelanggan */}
+        {showMobileCart && (
+          <div className="fixed inset-0 z-[60]">
+            <div
+              className="absolute inset-0 bg-telaga-950/50 backdrop-blur-sm"
+              onClick={() => setShowMobileCart(false)}
+            />
+            <div className="absolute inset-x-0 bottom-0 flex max-h-[88vh] flex-col rounded-t-3xl bg-white shadow-2xl animate-slide-up">
+              <div className="shrink-0 border-b border-telaga-100 px-4 pb-3 pt-2">
+                <div className="mx-auto mb-2 h-1.5 w-10 rounded-full bg-telaga-100" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-montserrat text-sm font-bold text-telaga-900">Keranjang</h3>
+                    <span className="rounded-full border border-telaga-100 bg-telaga-50 px-2 py-0.5 font-montserrat text-[11px] font-bold text-telaga-700">
+                      {itemCount} item
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowMobileCart(false)}
+                    className="rounded-lg p-1.5 text-telaga-900/50 transition-colors hover:bg-telaga-50"
+                    aria-label="Tutup keranjang"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-4 py-3">
+                {customerSlot}
+                {cartSection}
+              </div>
+
+              <div
+                className="shrink-0 border-t border-telaga-100 bg-white px-4 pt-3"
+                style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="font-montserrat text-xs font-semibold uppercase tracking-wide text-telaga-900/60">
+                    Total
+                  </span>
+                  <span className="font-montserrat text-base font-bold text-telaga-600">
+                    Rp {formatPrice(subtotal)}
+                  </span>
+                </div>
+                {!customerId && (
+                  <p className="mb-2 font-montserrat text-[11px] font-semibold text-senja-600">
+                    Pilih pelanggan di atas untuk melanjutkan pembayaran.
+                  </p>
+                )}
+                <AnimatedButton
+                  variant="blue"
+                  onClick={handleMobileContinue}
+                  disabled={!canProceed}
+                  className="w-full py-3"
+                >
+                  {continueLabel}
+                </AnimatedButton>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {modalsSection}
+
+        {/* Toast singkat setelah item masuk keranjang */}
+        {toastMessage && (
+          <div className="pointer-events-none fixed inset-x-0 top-4 z-[70] flex justify-center px-4">
+            <div className="flex items-center gap-2 rounded-xl bg-telaga-900/95 px-3.5 py-2 font-montserrat text-xs font-semibold text-white shadow-lg">
+              <CheckCircle size={15} className="text-telaga-300" />
+              {toastMessage}
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 
-  return cartSection;
+  return (
+    <>
+      {cartSection}
+      {modalsSection}
+    </>
+  );
 };
 
 export default QuickOrderTreatmentSelect; 

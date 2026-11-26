@@ -1,6 +1,6 @@
 import React, {useState, useEffect, useCallback, useMemo} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {Plus, Minus, X, Search, User, Calendar, DollarSign, QrCode, CreditCard, AlertCircle, AlertTriangle, ArrowLeft, Info, Coins, Utensils} from 'lucide-react';
+import {Plus, Minus, X, Search, User, Calendar, DollarSign, QrCode, CreditCard, AlertCircle, AlertTriangle, ArrowLeft, Info, Coins, Utensils, MessageSquare} from 'lucide-react';
 import QuickOrderCustomerSelect, {isWalkInCustomer} from '../../components/QuickInput/QuickOrderCustomerSelect';
 import QuickOrderTreatmentSelect from '../../components/QuickInput/QuickOrderTreatmentSelect';
 import QuickOrderPaymentInput from '../../components/QuickInput/QuickOrderPaymentInput';
@@ -74,6 +74,7 @@ const initialOrderData = {
   order_type: 'dine-in', // Dine-in / takeaway (Agrowisata Telaga)
   customer_name: '', // Nama pemesan walk-in (tanpa member)
   table_number: '', // Nomor meja, wajib untuk dine-in
+  customer_note: '', // Catatan bebas customer untuk keseluruhan pesanan
   total: 0,
   isDP: false,
   shift_id: null, // ✅ Add shift_id
@@ -570,6 +571,7 @@ const QuickOrder = () => {
           ? (orderData.order_type || ORDER_TYPE.DINE_IN)
           : ORDER_TYPE.TAKEAWAY,
         table_number: needsTableNumber ? tableNumber : null,
+        customer_note: (orderData.customer_note || '').trim() || null,
         shift_id: latestShiftId, // ✅ Gunakan shift_id dari helper yang reliable
         created_by: userData?.id || 1, // Gunakan userData yang sudah diambil
         tenant_id: userData?.tenant_id || 1, // Tambahkan tenant_id dari userData
@@ -851,79 +853,89 @@ const QuickOrder = () => {
             />
             {/* Detail kunjungan: nama pemesan + tipe pesanan + nomor meja (khusus cabang cafe) */}
             {needsGuestFields && (
-            <div className="mt-4 rounded-xl border border-telaga-100 bg-white p-3">
-              <div className="mb-3 flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-telaga-50 text-telaga-600">
-                  <Utensils className="h-3.5 w-3.5" />
-                </div>
-                <h3 className="text-sm font-semibold font-montserrat tracking-wide text-telaga-900">
+            <div className="mt-3 rounded-xl border border-telaga-100 bg-white px-2.5 py-2.5">
+              <div className="mb-2 flex items-center gap-1.5">
+                <Utensils className="h-3.5 w-3.5 text-telaga-600" />
+                <h3 className="text-xs font-semibold font-montserrat tracking-wide text-telaga-900">
                   Detail Kunjungan
                 </h3>
               </div>
 
-              {/* Nama pemesan */}
-              <div className="mb-3">
-                <label className="mb-1 block text-xs font-semibold font-montserrat text-telaga-900/70">
-                  Nama Pemesan <span className="text-senja-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={orderData.customer_name || ''}
-                  onChange={(e) => setOrderData(prev => ({ ...prev, customer_name: e.target.value }))}
-                  placeholder="Contoh: Bu Sari"
-                  className="w-full rounded-xl border border-telaga-100 bg-krem px-3 py-2.5 text-sm font-montserrat text-telaga-950 placeholder-telaga-900/35 focus:border-telaga-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-telaga-400/25"
-                />
-                {!isWalkInCustomer(orderData.customer || guestCustomer) && (
-                  <p className="mt-1 text-[11px] font-montserrat text-telaga-900/50">
-                    Member terpilih: {orderData.customer?.name} — nama di atas hanya untuk pesanan walk-in.
-                  </p>
-                )}
-              </div>
-
-              {/* Penyajian default order — disimpan di orders.order_type.
-                  Item di keranjang masih bisa menimpanya sendiri. */}
-              <div className="mb-3">
-                <label
-                  htmlFor="order-serve-mode"
-                  className="mb-1 block text-xs font-semibold font-montserrat text-telaga-900/70"
-                >
-                  Penyajian <span className="text-senja-500">*</span>
-                </label>
-                <select
-                  id="order-serve-mode"
-                  value={orderData.order_type || ORDER_TYPE.DINE_IN}
-                  onChange={(e) =>
-                    setOrderData(prev => ({ ...prev, order_type: e.target.value }))
-                  }
-                  className="w-full appearance-none rounded-xl border border-telaga-100 bg-krem px-3 py-2.5 text-sm font-montserrat text-telaga-950 focus:border-telaga-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-telaga-400/25"
-                >
-                  <option value={ORDER_TYPE.DINE_IN}>Dine In — makan di tempat</option>
-                  <option value={ORDER_TYPE.TAKEAWAY}>Bawa Pulang</option>
-                  <option value={ORDER_TYPE.MIXED}>Campur — sebagian dibawa pulang</option>
-                </select>
-                <p className="mt-1 text-[11px] font-montserrat text-telaga-900/50">
-                  Berlaku untuk semua item. Tiap item masih bisa diubah di keranjang.
-                </p>
-              </div>
-
-              {/* Nomor meja — muncul kalau order-nya dine-in / campur */}
-              {needsTableNumber && (
+              <div className="space-y-2">
+                {/* Nama pemesan */}
                 <div>
-                  <label className="mb-1 block text-xs font-semibold font-montserrat text-telaga-900/70">
-                    No. Meja <span className="text-senja-500">*</span>
+                  <label className="mb-0.5 block text-[11px] font-semibold font-montserrat text-telaga-900/60">
+                    Nama Pemesan <span className="text-senja-500">*</span>
                   </label>
                   <input
                     type="text"
-                    value={orderData.table_number || ''}
-                    onChange={(e) => setOrderData(prev => ({ ...prev, table_number: e.target.value }))}
-                    placeholder="05"
-                    className="w-28 rounded-xl border border-telaga-100 bg-krem px-3 py-2.5 text-sm font-montserrat text-telaga-950 placeholder-telaga-900/35 focus:border-telaga-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-telaga-400/25"
+                    value={orderData.customer_name || ''}
+                    onChange={(e) => setOrderData(prev => ({ ...prev, customer_name: e.target.value }))}
+                    placeholder="Contoh: Bu Sari"
+                    className="w-full rounded-lg border border-telaga-100 bg-krem px-2.5 py-2 text-sm font-montserrat text-telaga-950 placeholder-telaga-900/35 focus:border-telaga-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-telaga-400/25"
                   />
-                  <p className="mt-1 text-[11px] font-montserrat text-telaga-900/50">
-                    Diperlukan kalau ada item yang dimakan di tempat.
-                  </p>
+                  {!isWalkInCustomer(orderData.customer || guestCustomer) && (
+                    <p className="mt-0.5 text-[10px] font-montserrat text-telaga-900/45">
+                      Member terpilih: {orderData.customer?.name}
+                    </p>
+                  )}
                 </div>
-              )}
+
+                {/* Penyajian (orders.order_type) + No. Meja sejajar supaya ringkas */}
+                <div className={`grid gap-2 ${needsTableNumber ? 'grid-cols-[minmax(0,1fr)_4.75rem]' : 'grid-cols-1'}`}>
+                  <div className="min-w-0">
+                    <label
+                      htmlFor="order-serve-mode"
+                      className="mb-0.5 block text-[11px] font-semibold font-montserrat text-telaga-900/60"
+                    >
+                      Penyajian <span className="text-senja-500">*</span>
+                    </label>
+                    <select
+                      id="order-serve-mode"
+                      value={orderData.order_type || ORDER_TYPE.DINE_IN}
+                      onChange={(e) =>
+                        setOrderData(prev => ({ ...prev, order_type: e.target.value }))
+                      }
+                      className="w-full appearance-none rounded-lg border border-telaga-100 bg-krem px-2.5 py-2 text-sm font-montserrat text-telaga-950 focus:border-telaga-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-telaga-400/25"
+                    >
+                      <option value={ORDER_TYPE.DINE_IN}>Dine In</option>
+                      <option value={ORDER_TYPE.TAKEAWAY}>Bawa Pulang</option>
+                      <option value={ORDER_TYPE.MIXED}>Campur</option>
+                    </select>
+                  </div>
+
+                  {needsTableNumber && (
+                    <div>
+                      <label className="mb-0.5 block text-[11px] font-semibold font-montserrat text-telaga-900/60">
+                        No. Meja <span className="text-senja-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={orderData.table_number || ''}
+                        onChange={(e) => setOrderData(prev => ({ ...prev, table_number: e.target.value }))}
+                        placeholder="05"
+                        className="w-full rounded-lg border border-telaga-100 bg-krem px-2.5 py-2 text-center text-sm font-montserrat text-telaga-950 placeholder-telaga-900/35 focus:border-telaga-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-telaga-400/25"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Catatan customer untuk keseluruhan pesanan */}
+                <div>
+                  <label className="mb-0.5 flex items-center gap-1 text-[11px] font-semibold font-montserrat text-telaga-900/60">
+                    <MessageSquare className="h-3 w-3" />
+                    Catatan
+                  </label>
+                  <textarea
+                    value={orderData.customer_note || ''}
+                    onChange={(e) => setOrderData(prev => ({ ...prev, customer_note: e.target.value }))}
+                    rows={2}
+                    maxLength={500}
+                    placeholder="Mis. duduk di tengah kolam, minta 2 gelas tambahan"
+                    className="w-full resize-none rounded-lg border border-telaga-100 bg-krem px-2.5 py-2 text-sm font-montserrat text-telaga-950 placeholder-telaga-900/35 focus:border-telaga-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-telaga-400/25"
+                  />
+                </div>
+              </div>
             </div>
             )}
             {/* Qty Pengunjung & Jenis Kunjungan disembunyikan — jumlah dihitung
@@ -1152,6 +1164,9 @@ const QuickOrder = () => {
               onOpenAIDetection={() => setShowAIDetectionModal(true)}
               isCafeMode={needsGuestFields}
               outletMode={branchOrderMode}
+              onContinue={() => setStep(1)}
+              canContinue={true}
+              continueLabel="Lanjut ke Pembayaran"
             />
           </div>
         );
@@ -1261,7 +1276,7 @@ const QuickOrder = () => {
       </div>
 
       {/* Main Content */}
-      <div className={`mx-auto px-4 py-6 ${step === 0 ? 'max-w-2xl lg:max-w-[1440px] lg:px-6' : 'max-w-2xl'}`}>
+      <div className={`mx-auto px-4 py-6 ${step === 0 ? 'max-w-2xl lg:max-w-[1440px] lg:px-6 pb-28 lg:pb-6' : 'max-w-2xl'}`}>
         {/* Order Limit Info Card */}
         {orderLimit && orderLimit.max !== null && (
           <div className="bg-white border border-telaga-100 rounded-lg p-3 mb-4 shadow-sm">
@@ -1306,7 +1321,7 @@ const QuickOrder = () => {
           </div>
 
           {/* Footer */}
-          <div className="px-4 py-4 border-t border-telaga-100 sm:px-6">
+          <div className={`px-4 py-4 border-t border-telaga-100 sm:px-6 ${step === 0 ? 'hidden lg:block' : ''}`}>
             {/* Error dari backend saat submit order */}
             {submitError && (
               <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg">
