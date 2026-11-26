@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Plus, Search, Filter, Clock, CheckCircle, AlertCircle, DollarSign, ChevronRight, ChevronLeft, X, ArrowLeft, RefreshCw, Info, Receipt, Ticket, Users, TrendingUp, BarChart3, Wallet, QrCode, Banknote, CreditCard, Award } from 'lucide-react';
+import {useNavigate, useLocation} from 'react-router-dom';
+import {Plus, Search, Filter, Clock, CheckCircle, AlertCircle, DollarSign, ChevronRight, ChevronLeft, X, ArrowLeft, RefreshCw, Receipt, Ticket, Users, TrendingUp, BarChart3, Wallet, QrCode, Banknote, CreditCard, Award} from 'lucide-react';
 import QuickOrderPrintReceipt from "../../components/QuickInput/QuickOrderPrintReceipt";
 import OrderSearchFilterBar from "./components/OrderSearchFilterBar";
 import OrderList from "./components/OrderList";
@@ -10,14 +10,13 @@ import 'slick-carousel/slick/slick-theme.css';
 import dayjs from "dayjs"; // pastikan sudah install: npm i dayjs
 import { useOrderDashboardData } from "./hooks/useOrderDashboardData";
 import { transformOrderListNew } from "./utils/orderTransformNew";
-import { useShift } from '../../contexts/ShiftContext';
-import { useCurrentUserRole } from '../../utils/roleValidator';
+import {useShift} from '../../contexts/ShiftContext';
+import {useCurrentUserRole} from '../../utils/roleValidator';
 import { saveFilterToStorage, getFilterFromStorage, clearFilterFromStorage, FILTER_TYPES, COMPONENT_NAMES } from "../../utils/filterStorage";
 import PaymentDetailModal from '../../components/Modal/PaymentDetailModal';
 import ServiceDetailModal from '../../components/Modal/ServiceDetailModal';
-import { getPaymentStatusOrders, getServiceStatusOrders, buildQueryParams } from './api/orderModalApi';
+import {getPaymentStatusOrders, getServiceStatusOrders, buildQueryParams} from './api/orderModalApi';
 import AnimatedButton from "../../components/Design/AnimatedButton";
-import OrderExplanationModal from "../../components/Modal/OrderExplanationModal";
 import ConfirmationModal from "../../components/Modal/ConfirmationModal";
 import OpenShiftModal from '../BERANDA/SHIFT/OpenShiftModal';
 import instance from '../../config/api';
@@ -77,8 +76,6 @@ const OrderDashboard = () => {
   const [orderDetailStatus, setOrderDetailStatus] = useState('all');
   const [paymentStatus, setPaymentStatus] = useState('all');
 
-
-
   // State untuk Payment Detail Modal
   const [showPaymentDetailModal, setShowPaymentDetailModal] = useState(false);
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState('');
@@ -94,9 +91,6 @@ const OrderDashboard = () => {
   const [modalPagination, setModalPagination] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState(null);
-
-  // State untuk Explanation Modal
-  const [showExplanationModal, setShowExplanationModal] = useState(false);
 
   // Migration function untuk data filter lama
   const migrateOldFilterData = () => {
@@ -178,11 +172,9 @@ const OrderDashboard = () => {
     }
   };
 
-
   // Load filter saat component mount
   useEffect(() => {
     if (!isInitialized.current) {
-
 
       loadFilterFromStorageNew();
       isInitialized.current = true;
@@ -190,15 +182,6 @@ const OrderDashboard = () => {
   }, []);
 
   // Check if explanation modal should be shown
-  useEffect(() => {
-    const hasSeenExplanation = localStorage.getItem('order_explanation_seen');
-    if (!hasSeenExplanation) {
-      setShowExplanationModal(true);
-    }
-  }, []);
-
-
-
 
   // Save filter setiap kali ada perubahan pada active filter
   useEffect(() => {
@@ -264,7 +247,6 @@ const OrderDashboard = () => {
     // Trigger reset untuk OrderSearchFilterBar
     setResetTrigger(prev => prev + 1);
   };
-
 
   // Function untuk handle payment detail modal
   const handleShowPaymentDetail = async (status) => {
@@ -379,8 +361,6 @@ const OrderDashboard = () => {
     }
   };
 
-
-
   // Pakai custom hook untuk fetch data dengan state provider
   const {
     orders,
@@ -423,17 +403,12 @@ const OrderDashboard = () => {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [refreshOrders]);
 
-
-
-
   const { shift, fetchProfileAndShift } = useShift();
 
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [printOrderData, setPrintOrderData] = useState(null);
   const [showShiftValidationModal, setShowShiftValidationModal] = useState(false);
   const [showFabModal, setShowFabModal] = useState(false);
-
-
 
   // Removed searchTimeout cleanup - no more debounce needed
 
@@ -475,7 +450,6 @@ const OrderDashboard = () => {
   const topServices = (stats.service_breakdown || []).slice(0, 5);
   const maxServiceQty = topServices.reduce((max, item) => Math.max(max, item.qty), 0);
 
-
   return (
     <div className="min-h-screen bg-krem relative">
       {/* Header */}
@@ -502,15 +476,6 @@ const OrderDashboard = () => {
           </div>
           {/* Right Buttons */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Info Button */}
-            <button
-              onClick={() => setShowExplanationModal(true)}
-              className="w-10 h-10 flex items-center justify-center bg-white/15 hover:bg-white/25 border border-white/25 text-white rounded-xl backdrop-blur-sm transition-all duration-200 active:scale-95"
-              aria-label="Informasi"
-              title="Panduan Dashboard Pesanan"
-            >
-              <Info className="w-5 h-5" />
-            </button>
             {/* Quick Order Button */}
             <button
               onClick={async () => {
@@ -566,7 +531,6 @@ const OrderDashboard = () => {
           loading={loading}
         />
       </div>
-
 
       {/* Statistics Section */}
       {loading && (
@@ -917,12 +881,6 @@ const OrderDashboard = () => {
           error={modalError}
         />
       )}
-
-      {/* Order Explanation Modal */}
-      <OrderExplanationModal
-        isOpen={showExplanationModal}
-        onClose={() => setShowExplanationModal(false)}
-      />
 
       {/* Shift Validation Modal */}
       <ConfirmationModal

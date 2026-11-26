@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Plus, ArrowLeft, Save, Trash2, X, Printer, AlertCircle, AlertTriangle, Edit2, Info, Phone, MapPin, Crown, HelpCircle, Sparkles } from 'lucide-react';
-import { OrderDetailProvider, useOrderDetail } from './context/OrderDetailContext';
-import { useOrderDetailData } from './hooks/useOrderDetailData';
-import { getTreatments, getDiscounts, searchItems, getOrderDetailStatusHistory, deleteOrder, updateOrder } from './api/orderApi';
-import { transformApiToFETemplate, transformFETemplateToApi } from './utils/orderTransformNew';
-import { recalculateOrderQuantity, createPlaceholderItem } from './utils/orderCalculations';
+import React, {useState, useEffect, useCallback, useRef} from 'react';
+import {useParams, useNavigate, useLocation} from 'react-router-dom';
+import {Plus, ArrowLeft, Save, Trash2, X, Printer, AlertCircle, AlertTriangle, Edit2, Info, Phone, MapPin, Crown, Sparkles} from 'lucide-react';
+import {OrderDetailProvider, useOrderDetail} from './context/OrderDetailContext';
+import {useOrderDetailData} from './hooks/useOrderDetailData';
+import {getTreatments, getDiscounts, searchItems, getOrderDetailStatusHistory, deleteOrder, updateOrder} from './api/orderApi';
+import {transformApiToFETemplate, transformFETemplateToApi} from './utils/orderTransformNew';
+import {recalculateOrderQuantity, createPlaceholderItem} from './utils/orderCalculations';
 import TreatmentCart from './components/OrderDetail/TreatmentCart';
 import AddTreatmentModal from './components/OrderDetail/AddTreatmentModal';
 import ItemDetailModal from './components/OrderDetail/ItemDetailModal';
@@ -13,7 +13,7 @@ import EditItemModal from './components/OrderDetail/EditItemModal';
 import EditCustomerModal from './components/OrderDetail/EditCustomerModal';
 import PaymentStep from './components/OrderDetail/PaymentStep';
 import ServiceCard from './components/OrderDetail/ServiceCard';
-import { groupOrderDetailsForFE } from './utils/orderTransformNew';
+import {groupOrderDetailsForFE} from './utils/orderTransformNew';
 import StepperHeader from './components/OrderDetail/StepperHeader';
 import AnimatedButton from '../../components/Design/AnimatedButton';
 import QuickOrderPrintReceipt from '../../components/QuickInput/QuickOrderPrintReceipt';
@@ -22,38 +22,16 @@ import ValidationModal from '../../components/OrderDetail/ValidationModal';
 import SuccessModal from '../../components/Modal/SuccessModal';
 import StatusHistoryModal from './components/OrderDetail/StatusHistoryModal';
 import PhotoGalleryModal from '../../components/Modal/PhotoGalleryModal';
-import OrderDetailExplanationModal from '../../components/Modal/OrderDetailExplanationModal';
 import AIItemDetailModal from '../../components/QuickInput/AIItemDetailModal';
 import StepCustomerInfo from './sections/StepCustomerInfo';
 import StepReview from './sections/StepReview';
 import isEqual from 'lodash.isequal';
-import { UNSAFE_NavigationContext as NavigationContext } from 'react-router-dom';
-import { getUserProfile } from '../../utils/userProfileHelper';
-import { filterTreatmentsForOrderMode } from '../../utils/treatmentHelper';
+import {UNSAFE_NavigationContext as NavigationContext} from 'react-router-dom';
+import {getUserProfile} from '../../utils/userProfileHelper';
+import {filterTreatmentsForOrderMode} from '../../utils/treatmentHelper';
 import instance from '../../config/api';
-import {
-  formatOrderDetailStatus,
-  getOrderDetailStatusColors,
-  formatCurrency,
-  formatDate,
-  formatOrderType,
-  formatPaymentStatus,
-  formatDiscountDisplay,
-  getMembershipBadgeColor,
-  getMembershipDiscountDisplay,
-  ORDER_DETAIL_STATUS,
-  PAYMENT_STATUS,
-  ORDER_TYPE,
-  DELIVERY_STATUS,
-  getTodayDateString,
-  toInputDateString,
-  toInputDateTimeString,
-  isDateInPast,
-  isOrderDetailStatusEditable,
-  isOrderDetailStatusRemovable,
-  isPaymentStatusEditable
-} from '../../utils/labelFormatter';
-import { normalizeTimeString } from '../../utils/dateUtils';
+import {formatOrderDetailStatus, getOrderDetailStatusColors, formatCurrency, formatDate, formatOrderType, formatPaymentStatus, formatDiscountDisplay, getMembershipBadgeColor, getMembershipDiscountDisplay, ORDER_DETAIL_STATUS, PAYMENT_STATUS, ORDER_TYPE, DELIVERY_STATUS, getTodayDateString, toInputDateString, toInputDateTimeString, isDateInPast, isOrderDetailStatusEditable, isOrderDetailStatusRemovable, isPaymentStatusEditable} from '../../utils/labelFormatter';
+import {normalizeTimeString} from '../../utils/dateUtils';
 
 // Main OrderDetail component with provider
 const OrderDetailWithProvider = () => {
@@ -176,22 +154,14 @@ const OrderDetailContent = () => {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
 
   // State untuk explanation modal
-  const [showExplanationModal, setShowExplanationModal] = useState(false);
 
   // State untuk submit loading and points settings
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pointsSettings, setPointsSettings] = useState({ enabled: false, min_redeem: 100 });
 
-
   // Function untuk menganalisis perubahan data
 
   // Check if user has seen the explanation modal before
-  useEffect(() => {
-    const hasSeenExplanation = localStorage.getItem('order_detail_explanation_seen');
-    if (!hasSeenExplanation) {
-      setShowExplanationModal(true);
-    }
-  }, []);
 
   // Listener validasi quantity dan item kosong
   useEffect(() => {
@@ -251,7 +221,6 @@ const OrderDetailContent = () => {
   const handleDiscountChange = useCallback((discount) => {
     setTreatmentDiscount(discount);
   }, []);
-
 
   const isGroupProduct = (group) => {
     if (!group) return false;
@@ -1345,8 +1314,6 @@ const OrderDetailContent = () => {
   const getStatusColor = (status) => getOrderDetailStatusColors(status);
   const getOrderDetailStatusLabel = (status) => formatOrderDetailStatus(status);
 
-
-
   // Render steps
   const renderStep1 = () => (
     <StepCustomerInfo
@@ -1591,13 +1558,6 @@ const OrderDetailContent = () => {
             </div>
             <div className="flex items-center gap-1.5">
               <button
-                onClick={() => setShowExplanationModal(true)}
-                className="rounded-xl p-2 text-white/90 transition-all hover:bg-white/15 hover:text-white active:scale-95"
-                title="Panduan Detail Pesanan"
-              >
-                <HelpCircle className="w-5 h-5" />
-              </button>
-              <button
                 onClick={() => setShowPrintModal(true)}
                 className="rounded-xl p-2 text-white/90 transition-all hover:bg-white/15 hover:text-white active:scale-95"
                 title="Cetak Struk"
@@ -1715,7 +1675,6 @@ const OrderDetailContent = () => {
             const group = { ...newOrderDetails[editingGroupIdx] };
             const originalItem = group.items[editingItemIdx];
 
-
             group.items = group.items.map((it, idx) => idx === editingItemIdx ? {
               ...it, // Keep original item data
               ...updatedItem, // Override with updated data
@@ -1724,11 +1683,9 @@ const OrderDetailContent = () => {
               treatment_id: it.treatment_id,
             } : it);
 
-
             newOrderDetails[editingGroupIdx] = group;
             const updatedOrderData = { ...orderData, order_details: newOrderDetails };
             actions.setOrderData(updatedOrderData);
-
 
             // Auto-save to server (silent) - pass data directly
             try {
@@ -2007,7 +1964,6 @@ const OrderDetailContent = () => {
         onSuccess={handleEditCustomerSuccess}
       />
 
-
       {/* Photo Gallery Modal */}
       <PhotoGalleryModal
         isOpen={showPhotoGallery}
@@ -2057,11 +2013,6 @@ const OrderDetailContent = () => {
         </div>
       )}
 
-      {/* Explanation Modal */}
-      <OrderDetailExplanationModal
-        isOpen={showExplanationModal}
-        onClose={() => setShowExplanationModal(false)}
-      />
     </div>
   );
 };

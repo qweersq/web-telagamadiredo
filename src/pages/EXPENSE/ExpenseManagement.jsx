@@ -7,7 +7,6 @@ import ExpenseCreateModal from './components/ExpenseCreateModal';
 import ExpenseEditModal from './components/ExpenseEditModal';
 import ExpenseDetailModal from './components/ExpenseDetailModal';
 import ExpenseDeleteModal from './components/ExpenseDeleteModal';
-import ExpenseExplanationModal from '../../components/Modal/ExpenseExplanationModal';
 import { getExpenses, deleteExpense, getBranches, getFinanceAccounts } from './api/expenseApi';
 import { getUserProfile } from '../../utils/userProfileHelper';
 import { formatCurrency, formatDate } from '../../utils/labelFormatter';
@@ -51,7 +50,6 @@ const ExpenseManagement = () => {
   const [loadingMore, setLoadingMore] = useState(false);
 
   // State untuk explanation modal
-  const [showExplanationModal, setShowExplanationModal] = useState(false);
 
   const fetchExpenses = useCallback(async (page = 1, append = false) => {
     try {
@@ -144,22 +142,8 @@ const ExpenseManagement = () => {
   }, []);
 
   // Check if explanation modal should be shown
-  useEffect(() => {
-    const hasSeenExplanation = localStorage.getItem('expense-explanation-seen');
-    if (!hasSeenExplanation) {
-      setShowExplanationModal(true);
-    }
-  }, []);
 
   // Handle explanation modal
-  const handleExplanationConfirm = () => {
-    localStorage.setItem('expense-explanation-seen', 'true');
-    setShowExplanationModal(false);
-  };
-
-  const handleExplanationClose = () => {
-    setShowExplanationModal(false);
-  };
 
   useEffect(() => {
     if (userData) {
@@ -337,16 +321,6 @@ const ExpenseManagement = () => {
                 <span>Tambah Pengeluaran</span>
               </button>
               
-              {/* Help Button */}
-              <button
-                onClick={() => setShowExplanationModal(true)}
-                className="px-3 py-4 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
-                title="Bantuan & Panduan Pengeluaran"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </button>
             </div>
 
             {/* Statistics Cards - Tokopedia Style */}
@@ -582,7 +556,6 @@ const ExpenseManagement = () => {
               )}
             </div>
 
-
           </div>
         </div>
       </main>
@@ -621,13 +594,6 @@ const ExpenseManagement = () => {
         onClose={() => setShowDeleteModal(false)}
         onConfirm={confirmDeleteExpense}
         expense={selectedExpense}
-      />
-
-      {/* Expense Explanation Modal */}
-      <ExpenseExplanationModal
-        isOpen={showExplanationModal}
-        onClose={handleExplanationClose}
-        onConfirm={handleExplanationConfirm}
       />
 
     </div>

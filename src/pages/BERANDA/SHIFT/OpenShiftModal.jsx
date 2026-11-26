@@ -1,11 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, {useState} from 'react';
 import AnimatedButton from '../../../components/Design/AnimatedButton';
-import { useShift } from '../../../contexts/ShiftContext';
+import {useShift} from '../../../contexts/ShiftContext';
 import instance from '../../../config/api';
-import { getUserProfile, getShiftDetailFull, invalidateUserProfileCache } from '../../../utils/userProfileHelper';
-import { formatPaymentMethod, getPaymentMethodColors } from '../../../utils/labelFormatter';
-import { HelpCircle } from 'lucide-react';
-import ShiftExplanationModal from '../../../components/Modal/ShiftExplanationModal';
+import {getUserProfile, getShiftDetailFull, invalidateUserProfileCache} from '../../../utils/userProfileHelper';
+import {formatPaymentMethod, getPaymentMethodColors} from '../../../utils/labelFormatter';
 
 const OpenShiftModal = ({ open, onClose }) => {
   const shiftContext = useShift();
@@ -36,7 +34,6 @@ const OpenShiftModal = ({ open, onClose }) => {
   const [selectedAccountForTransaction, setSelectedAccountForTransaction] = useState(null);
   const [shiftDetail, setShiftDetail] = useState(null);
   const [loadingShiftDetail, setLoadingShiftDetail] = useState(false);
-  const [showExplanationModal, setShowExplanationModal] = useState(false);
   const [isOpeningShift, setIsOpeningShift] = useState(false);
   const [isEndingShift, setIsEndingShift] = useState(false);
   const [isSubmittingExpense, setIsSubmittingExpense] = useState(false);
@@ -107,20 +104,6 @@ const OpenShiftModal = ({ open, onClose }) => {
     }
   };
 
-  useEffect(() => {
-    if (open) {
-      fetchProfileAndShift();
-      fetchCashAccounts();
-
-      // ✅ Show explanation modal on first visit
-      const hasSeenExplanation = localStorage.getItem('shift_explanation_seen');
-      if (!hasSeenExplanation) {
-        setShowExplanationModal(true);
-      }
-    }
-    // eslint-disable-next-line
-  }, [open]);
-
   if (!open) return null;
 
   const isShiftOpen = !!shift && !shift.end_time;
@@ -130,7 +113,6 @@ const OpenShiftModal = ({ open, onClose }) => {
   // Perhitungan saldo akhir yang benar: Saldo Awal + Kas Masuk - Kas Keluar
   const saldoAkhir = parseFloat(shift?.cash_balance || 0);
   const totalPengeluaran = kasKeluar;
-
 
   // Helper untuk extract error message
   const getErrorMessage = (error) => {
@@ -275,13 +257,6 @@ const OpenShiftModal = ({ open, onClose }) => {
         <div className="flex items-center justify-between px-6 py-2 border-b border-telaga-100 flex-shrink-0 rounded-t-3xl bg-gradient-to-r from-telaga-50 via-krem to-krem">
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-bold font-montserrat text-telaga-950">{isShiftOpen ? 'Ringkasan Shift' : 'Buka Shift'}</h3>
-            <button
-              onClick={() => setShowExplanationModal(true)}
-              className="p-1.5 hover:bg-telaga-100 rounded-lg transition-colors"
-              title="Panduan Shift"
-            >
-              <HelpCircle className="w-5 h-5 text-telaga-600" />
-            </button>
           </div>
           <button
             className="p-2 rounded-full hover:bg-telaga-100 transition-colors"
@@ -344,7 +319,6 @@ const OpenShiftModal = ({ open, onClose }) => {
                   </div>
                 </div>
               </div>
-
 
               {/* Tombol Detail Akun Keuangan */}
               <div className="mb-4">
@@ -980,11 +954,6 @@ const OpenShiftModal = ({ open, onClose }) => {
         </div>
       )}
 
-      {/* Modal Explanation */}
-      <ShiftExplanationModal
-        isOpen={showExplanationModal}
-        onClose={() => setShowExplanationModal(false)}
-      />
     </div>
   );
 };

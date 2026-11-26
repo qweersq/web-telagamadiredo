@@ -1,16 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import {useState, useEffect, useCallback} from 'react';
+import {useNavigate} from 'react-router-dom';
 import HeaderBerandaOwner from '../../components/Com Header/HeaderBerandaOwner';
 import AnimatedButton from '../../components/Design/AnimatedButton';
 import EmployeeModal from '../../components/Modal/EmployeeModal';
-import EmployeeExplanationModal from '../../components/Modal/EmployeeExplanationModal';
-import { SubscriptionLimitsCard, SubscriptionValidationModal } from '../../components/SubscriptionLimits';
+import {SubscriptionLimitsCard, SubscriptionValidationModal} from '../../components/SubscriptionLimits';
 import SubscriptionValidationService from '../../services/subscriptionValidationService';
 import instance from '../../config/api';
-import { getUserProfile, invalidateUserProfileCache } from '../../utils/userProfileHelper';
-import { getRoleLabel, getRoleBadgeClass } from '../../utils/roleValidator';
-import { FaFilter, FaTimes, FaMapMarkerAlt, FaUserTag, FaSearch, FaUsers, FaPlus, FaPhone, FaChevronRight, FaCheck } from 'react-icons/fa';
-import { Info } from 'lucide-react';
+import {getUserProfile, invalidateUserProfileCache} from '../../utils/userProfileHelper';
+import {getRoleLabel, getRoleBadgeClass} from '../../utils/roleValidator';
+import {FaFilter, FaTimes, FaMapMarkerAlt, FaUserTag, FaSearch, FaUsers, FaPlus, FaPhone, FaChevronRight, FaCheck} from 'react-icons/fa';
 
 const AnalisisKaryawan = () => {
   const navigate = useNavigate();
@@ -42,7 +40,6 @@ const AnalisisKaryawan = () => {
   const [showFilterModal, setShowFilterModal] = useState(false);
   
   // State untuk explanation modal
-  const [showExplanationModal, setShowExplanationModal] = useState(false);
   
   // ✅ Subscription validation states
   const [subscriptionData, setSubscriptionData] = useState(null);
@@ -78,12 +75,6 @@ const AnalisisKaryawan = () => {
     };
     
     loadInitialData();
-    
-    // Check if user has seen explanation before
-    const hasSeenExplanation = localStorage.getItem('employee_explanation_seen');
-    if (!hasSeenExplanation) {
-      setShowExplanationModal(true);
-    }
   }, []); // Only run on mount
 
   // Refetch when filters change
@@ -369,8 +360,6 @@ const AnalisisKaryawan = () => {
     setLoadingMore(false);
   };
 
-
-
   // Filtering is now handled by the API, so we just use the employees data directly
   const filteredEmployees = employees;
 
@@ -459,8 +448,6 @@ const AnalisisKaryawan = () => {
       </div>
     );
   }
-
-
 
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden font-montserrat bg-krem">
@@ -583,13 +570,6 @@ const AnalisisKaryawan = () => {
                   >
                     <FaPlus className="h-3.5 w-3.5" />
                     Tambah
-                  </button>
-                  <button
-                    onClick={() => setShowExplanationModal(true)}
-                    title="Informasi manajemen karyawan"
-                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-telaga-100 bg-telaga-50 text-telaga-700 transition-colors hover:bg-telaga-100"
-                  >
-                    <Info className="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -769,7 +749,6 @@ const AnalisisKaryawan = () => {
         </div>
       </main>
 
-
       {/* Employee Modal */}
       <EmployeeModal
         isOpen={showEmployeeModal}
@@ -900,13 +879,6 @@ const AnalisisKaryawan = () => {
           </div>
         </div>
       )}
-
-
-      {/* Employee Explanation Modal */}
-      <EmployeeExplanationModal
-        isOpen={showExplanationModal}
-        onClose={() => setShowExplanationModal(false)}
-      />
 
       {/* ✅ Subscription Validation Modal */}
       <SubscriptionValidationModal

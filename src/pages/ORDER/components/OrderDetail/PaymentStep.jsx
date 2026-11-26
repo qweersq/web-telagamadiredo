@@ -5,7 +5,6 @@ import AnimatedButton from '../../../../components/Design/AnimatedButton';
 import { useCurrentUserRole } from '../../../../utils/roleValidator';
 import AddPaymentModal from '../../../../components/QuickInput/AddPaymentModal';
 import QuickOrderDiscountModal from '../../../../components/QuickInput/QuickOrderDiscountModal';
-import PointsExplanationModal from '../../../../components/Modal/PointsExplanationModal';
 import { getActiveShiftId } from '../../../../utils/userProfileHelper';
 import { getDiscounts } from '../../api/orderApi';
 import {
@@ -21,7 +20,6 @@ import {
 } from '../../../../utils/labelFormatter';
 import { calculateTotalWithPaymentDiscount } from '../../utils/orderTransformNew';
 import instance from '../../../../config/api';
-
 
 // Helper function untuk payment display menggunakan formatter
 const getPaymentIconComponent = (accountType, method) => {
@@ -102,7 +100,6 @@ const PaymentStep = ({ total, discounts = [], submitOrderData = null, fetchOrder
   const [isEditingDate, setIsEditingDate] = useState(false);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [showNotesModal, setShowNotesModal] = useState(false);
-  const [showPointsExplanation, setShowPointsExplanation] = useState(false);
   const [usePoints, setUsePoints] = useState(false);
   const [localDiscounts, setLocalDiscounts] = useState(discounts);
   const [pointsSettings, setPointsSettings] = useState({ enabled: false, redeem_rate: 50, min_redeem: 100, earn_rate: 1000, referral_bonus_new_customer: 0, first_order_bonus: 10, first_order_bonus_enabled: true }); // Default: disabled, 50 (100 poin = Rp 5.000), min_redeem: 100, earn_rate: 1000
@@ -784,14 +781,6 @@ const PaymentStep = ({ total, discounts = [], submitOrderData = null, fetchOrder
                         </span>
                       </div>
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => setShowPointsExplanation(true)}
-                      className="p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-                      title="Penjelasan Sistem Poin"
-                    >
-                      <Info className="w-4 h-4" />
-                    </button>
                   </div>
                 </div>
 
@@ -1243,11 +1232,6 @@ const PaymentStep = ({ total, discounts = [], submitOrderData = null, fetchOrder
         />
       )}
 
-      {/* Points Explanation Modal */}
-      <PointsExplanationModal
-        isOpen={showPointsExplanation}
-        onClose={() => setShowPointsExplanation(false)}
-      />
     </div>
   );
 };

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HeaderBerandaOwner from '../../components/Com Header/HeaderBerandaOwner';
 import AnimatedButton from '../../components/Design/AnimatedButton';
-import ShiftExplanationModal from '../../components/Modal/ShiftExplanationModal';
 import instance from '../../config/api';
 import { getTenantId } from '../../utils/userProfileHelper';
 import { 
@@ -40,7 +39,6 @@ const ShiftManagement = () => {
   const [branches, setBranches] = useState([]);
   const [selectedBranchId, setSelectedBranchId] = useState(null);
   const [showFilterModal, setShowFilterModal] = useState(false);
-  const [showExplanationModal, setShowExplanationModal] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [pagination, setPagination] = useState({
@@ -51,16 +49,6 @@ const ShiftManagement = () => {
     hasNextPage: false,
     hasPrevPage: false
   });
-
-  useEffect(() => {
-    fetchBranches();
-    
-    // Check if user has seen explanation before
-    const hasSeenExplanation = localStorage.getItem('shift_explanation_seen');
-    if (!hasSeenExplanation) {
-      setShowExplanationModal(true);
-    }
-  }, []);
 
   useEffect(() => {
     if (selectedBranchId) {
@@ -162,7 +150,6 @@ const ShiftManagement = () => {
     }
   };
 
-
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('id-ID', {
@@ -210,14 +197,6 @@ const ShiftManagement = () => {
           backPath="/berandaowner"
           currentTime={new Date().toLocaleTimeString()}
         />
-        {/* Info Button */}
-        <button
-          onClick={() => setShowExplanationModal(true)}
-          className="absolute top-4 right-4 w-10 h-10 bg-blue-100 hover:bg-blue-200 rounded-full flex items-center justify-center transition-colors duration-200 group"
-          title="Informasi Manajemen Shift"
-        >
-          <Info className="w-5 h-5 text-blue-600 group-hover:text-blue-700" />
-        </button>
       </div>
 
       <main className="flex-1 overflow-y-auto mt-[40px]">
@@ -251,13 +230,6 @@ const ShiftManagement = () => {
                 
                 {/* Info Tooltip Button */}
                 <div className="relative group">
-                  <button
-                    onClick={() => setShowExplanationModal(true)}
-                    className="w-10 h-10 bg-blue-100 hover:bg-blue-200 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:scale-105"
-                    title="Informasi Manajemen Shift"
-                  >
-                    <Info className="w-4 h-4 text-blue-600 group-hover:text-blue-700" />
-                  </button>
                   
                   {/* Tooltip */}
                   <div className="absolute right-0 top-full mt-2 w-64 bg-gray-900 text-white text-xs rounded-lg py-2 px-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
@@ -779,7 +751,6 @@ const ShiftManagement = () => {
               </div>
             )}
 
-
             <div className="flex justify-end mt-8">
               <button
                 onClick={() => setShowDetailModal(false)}
@@ -814,11 +785,6 @@ const ShiftManagement = () => {
         onApplyFilter={handleApplyFilter}
       />
 
-      {/* Shift Explanation Modal */}
-      <ShiftExplanationModal
-        isOpen={showExplanationModal}
-        onClose={() => setShowExplanationModal(false)}
-      />
     </div>
   );
 };

@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { CreditCard, QrCode, Building2, Trash2, Plus, Tag, FileText, Coins, X, Info, AlertCircle } from 'lucide-react';
+import React, {useState, useEffect} from 'react';
+import {CreditCard, QrCode, Building2, Trash2, Plus, Tag, FileText, Coins, X, AlertCircle} from 'lucide-react';
 import AnimatedButton from '../Design/AnimatedButton';
 import AddPaymentModal from './AddPaymentModal';
-import PointsExplanationModal from '../Modal/PointsExplanationModal';
-import { getPaymentMethodIcon, calculatePaymentStatus, formatPaymentStatus, getPaymentStatusColors, formatNumber, formatCurrency } from '../../utils/labelFormatter';
+import {getPaymentMethodIcon, calculatePaymentStatus, formatPaymentStatus, getPaymentStatusColors, formatNumber, formatCurrency} from '../../utils/labelFormatter';
 import instance from '../../config/api';
 
 // Format tanggal Indonesia dengan hari
@@ -49,7 +48,6 @@ const QuickOrderPaymentInput = ({
 }) => {
   const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
   const [usePoints, setUsePoints] = useState(false);
-  const [showPointsExplanation, setShowPointsExplanation] = useState(false);
   const [pointsSettings, setPointsSettings] = useState({ enabled: false, redeem_rate: 50, min_redeem: 100, earn_rate: 1000 }); // Default: disabled, 50 (100 poin = Rp 5.000), min_redeem: 100, earn_rate: 1000
 
   // Reset checkbox jika pointsToRedeem di-reset dari luar (misal customer berubah)
@@ -466,14 +464,6 @@ const QuickOrderPaymentInput = ({
                         </span>
                       </div>
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => setShowPointsExplanation(true)}
-                      className="p-1.5 text-telaga-900/40 hover:text-senja-600 hover:bg-senja-50 rounded-lg transition-colors"
-                      title="Penjelasan Sistem Poin"
-                    >
-                      <Info className="w-4 h-4" />
-                    </button>
                   </div>
                 </div>
 
@@ -703,11 +693,6 @@ const QuickOrderPaymentInput = ({
         paid={paid || 0}
       />
 
-      {/* Points Explanation Modal */}
-      <PointsExplanationModal
-        isOpen={showPointsExplanation}
-        onClose={() => setShowPointsExplanation(false)}
-      />
     </div>
   );
 };

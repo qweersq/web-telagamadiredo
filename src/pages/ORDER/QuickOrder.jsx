@@ -1,26 +1,24 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, Minus, X, Search, User, Calendar, DollarSign, QrCode, CreditCard, AlertCircle, AlertTriangle, ArrowLeft, Info, HelpCircle, Coins, Utensils } from 'lucide-react';
-import QuickOrderCustomerSelect, { isWalkInCustomer } from '../../components/QuickInput/QuickOrderCustomerSelect';
+import React, {useState, useEffect, useCallback, useMemo} from 'react';
+import {useNavigate} from 'react-router-dom';
+import {Plus, Minus, X, Search, User, Calendar, DollarSign, QrCode, CreditCard, AlertCircle, AlertTriangle, ArrowLeft, Info, Coins, Utensils} from 'lucide-react';
+import QuickOrderCustomerSelect, {isWalkInCustomer} from '../../components/QuickInput/QuickOrderCustomerSelect';
 import QuickOrderTreatmentSelect from '../../components/QuickInput/QuickOrderTreatmentSelect';
 import QuickOrderPaymentInput from '../../components/QuickInput/QuickOrderPaymentInput';
 import QuickOrderCustomerSearchModal from '../../components/QuickInput/QuickOrderCustomerSearchModal';
 import QuickOrderDiscountModal from '../../components/QuickInput/QuickOrderDiscountModal';
 import QuickOrderPrintReceipt from '../../components/QuickInput/QuickOrderPrintReceipt';
-import QuickOrderExplanationModal from '../../components/Modal/QuickOrderExplanationModal';
-import ReferralExplanationModal from '../../components/Modal/ReferralExplanationModal';
 import AIDetectionModal from '../../components/QuickInput/AIDetectionModal';
 // Chip "cabang aktif" — komponen yang sama dengan yang dipakai di header beranda
 // (`components/Com Header/BranchActiveChip.jsx`). Dipasang juga di atas judul
 // "Input Data Pesanan" supaya user tahu pesanan ini masuk ke cabang mana.
 import BranchActiveChip from '../../components/Com Header/BranchActiveChip';
-import { getCustomers, searchCustomers, getTreatments, getDiscounts, createOrder, createCustomer, checkCustomerByPhone, getWalkInCustomer } from './api/orderApi';
-import { groupOrderDetailsForFE } from './utils/orderTransformNew';
+import {getCustomers, searchCustomers, getTreatments, getDiscounts, createOrder, createCustomer, checkCustomerByPhone, getWalkInCustomer} from './api/orderApi';
+import {groupOrderDetailsForFE} from './utils/orderTransformNew';
 import AnimatedButton from '../../components/Design/AnimatedButton';
-import { useShift } from '../../contexts/ShiftContext';
-import { getUserProfile, getActiveShiftId, invalidateUserProfileCache } from '../../utils/userProfileHelper';
-import { formatNumber, formatOrderType, ORDER_TYPE } from '../../utils/labelFormatter';
-import { isFnbTreatment, isKitchenTreatment, filterTreatmentsForOutlet, ORDER_MODE } from '../../utils/treatmentHelper';
+import {useShift} from '../../contexts/ShiftContext';
+import {getUserProfile, getActiveShiftId, invalidateUserProfileCache} from '../../utils/userProfileHelper';
+import {formatNumber, formatOrderType, ORDER_TYPE} from '../../utils/labelFormatter';
+import {isFnbTreatment, isKitchenTreatment, filterTreatmentsForOutlet, ORDER_MODE} from '../../utils/treatmentHelper';
 import instance from '../../config/api';
 
 // Helper function untuk mendapatkan userData dari API
@@ -56,7 +54,6 @@ const masterDiscounts = [
   { id: 2, name: 'Promo Akhir Bulan', type: 'nominal', value: 15000 },
   { id: 3, name: 'Tanpa Diskon', type: 'nominal', value: 0 },
 ];
-
 
 const steps = [
   { label: 'Input Data', key: 'input' },
@@ -105,14 +102,12 @@ const QuickOrder = () => {
   const [pickupTime, setPickupTime] = useState('14:00');
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [printOrderData, setPrintOrderData] = useState(null);
-  const [showExplanationModal, setShowExplanationModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [orderLimit, setOrderLimit] = useState(null);
   const [referralCheckResult, setReferralCheckResult] = useState(null); // { found: boolean, customer: null | object, loading: boolean }
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [showNotesModal, setShowNotesModal] = useState(false);
-  const [showReferralExplanationModal, setShowReferralExplanationModal] = useState(false);
   const [pointsSettings, setPointsSettings] = useState({ enabled: false, redeem_rate: 50, referral_bonus_referrer: 10, referral_bonus_new_customer: 10, first_order_bonus: 10, first_order_bonus_enabled: true }); // Default: disabled, 50 (100 poin = Rp 5.000)
   const [showAIDetectionModal, setShowAIDetectionModal] = useState(false);
   const { user, shift, fetchProfileAndShift } = useShift();
@@ -158,12 +153,6 @@ const QuickOrder = () => {
   }, []);
 
   // Check if user has seen the explanation modal before
-  useEffect(() => {
-    const hasSeenExplanation = localStorage.getItem('quick_order_explanation_seen');
-    if (!hasSeenExplanation) {
-      setShowExplanationModal(true);
-    }
-  }, []);
 
   // Load order limit data
   useEffect(() => {
@@ -457,7 +446,6 @@ const QuickOrder = () => {
       }
     }));
   };
-
 
   // Ambil pesan error dari response backend, jangan ditelan jadi pesan generik
   const getApiErrorMessage = (error) =>
@@ -964,14 +952,6 @@ const QuickOrder = () => {
                       <label className="block text-xs font-semibold text-telaga-900/70 font-montserrat">
                         Nomor HP Referral (Opsional)
                       </label>
-                      <button
-                        type="button"
-                        onClick={() => setShowReferralExplanationModal(true)}
-                        className="p-1 hover:bg-telaga-50 rounded-full transition-colors"
-                        title="Info Sistem Referral"
-                      >
-                        <HelpCircle className="w-4 h-4 text-telaga-900/60" />
-                      </button>
                     </div>
 
                     {/* Show input field jika belum ada hasil atau customer tidak ditemukan */}
@@ -1277,15 +1257,6 @@ const QuickOrder = () => {
           <div className="flex-1 flex items-center text-center justify-center">
             <h1 className="text-lg font-semibold sm:text-3xl font-montserrat text-center font-normal text-white tracking-wide drop-shadow-md">Tambah Pesanan</h1>
           </div>
-          {/* Info Button */}
-          <button
-            onClick={() => setShowExplanationModal(true)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/80 hover:bg-white rounded-full shadow border border-telaga-100"
-            aria-label="Informasi"
-            title="Panduan Tambah Pesanan"
-          >
-            <Info className="w-5 h-5 text-telaga-600" />
-          </button>
         </div>
       </div>
 
@@ -1464,12 +1435,6 @@ const QuickOrder = () => {
         </div>
       )}
 
-      {/* Explanation Modal */}
-      <QuickOrderExplanationModal
-        isOpen={showExplanationModal}
-        onClose={() => setShowExplanationModal(false)}
-      />
-
       {/* AI Detection Modal */}
       <AIDetectionModal
         open={showAIDetectionModal}
@@ -1477,12 +1442,6 @@ const QuickOrder = () => {
         onResult={handleAIResult}
         treatments={visibleTreatments}
         customerId={orderData?.customer?.id || null}
-      />
-
-      {/* Referral Explanation Modal */}
-      <ReferralExplanationModal
-        isOpen={showReferralExplanationModal}
-        onClose={() => setShowReferralExplanationModal(false)}
       />
 
       {/* Discount Modal */}

@@ -6,7 +6,6 @@ import instance from '../../config/api';
 import bluetoothPrinterService from '../../services/bluetoothPrinterService';
 import { thermalPrinterService } from '../../services/thermalPrinterService';
 import { getUserProfile, getBranchId, getTenantId, getBranchName, getTenantBusinessName } from '../../utils/userProfileHelper';
-import PrinterExplanationModal from '../../components/Modal/PrinterExplanationModal';
 import { 
   FaPrint, 
   FaBluetooth, 
@@ -47,7 +46,6 @@ const PrinterManagement = ({ isFromAdmin = false }) => {
   const [bluetoothAvailable, setBluetoothAvailable] = useState(false);
 
   // State untuk explanation modal
-  const [showExplanationModal, setShowExplanationModal] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -130,8 +128,6 @@ const PrinterManagement = ({ isFromAdmin = false }) => {
     initializeData();
   }, [isFromAdmin]);
 
-
-
   // Update branch name when branches are loaded
   useEffect(() => {
     if (branches.length > 0 && selectedBranch) {
@@ -157,22 +153,8 @@ const PrinterManagement = ({ isFromAdmin = false }) => {
   }, [userProfile]);
 
   // Check if explanation modal should be shown
-  useEffect(() => {
-    const hasSeenExplanation = localStorage.getItem('printer-explanation-seen');
-    if (!hasSeenExplanation) {
-      setShowExplanationModal(true);
-    }
-  }, []);
 
   // Handle explanation modal
-  const handleExplanationConfirm = () => {
-    localStorage.setItem('printer-explanation-seen', 'true');
-    setShowExplanationModal(false);
-  };
-
-  const handleExplanationClose = () => {
-    setShowExplanationModal(false);
-  };
 
   // Cleanup on unmount only
   useEffect(() => {
@@ -678,8 +660,6 @@ const PrinterManagement = ({ isFromAdmin = false }) => {
     }
   };
 
-
-
   const getStatusIcon = (status) => {
     switch (status) {
       case 'active':
@@ -846,16 +826,6 @@ const PrinterManagement = ({ isFromAdmin = false }) => {
                     </div>
                   </div>
                   
-                  {/* Help Button */}
-                  <button
-                    onClick={() => setShowExplanationModal(true)}
-                    className="px-3 py-2 bg-white border-2 border-gray-200 text-gray-700 rounded-xl text-sm hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
-                    title="Bantuan & Panduan Printer"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </button>
                 </div>
                 
                 <AnimatedButton
@@ -1413,12 +1383,6 @@ const PrinterManagement = ({ isFromAdmin = false }) => {
         </div>
       )}
 
-      {/* Printer Explanation Modal */}
-      <PrinterExplanationModal
-        isOpen={showExplanationModal}
-        onClose={handleExplanationClose}
-        onConfirm={handleExplanationConfirm}
-      />
     </div>
   );
 };

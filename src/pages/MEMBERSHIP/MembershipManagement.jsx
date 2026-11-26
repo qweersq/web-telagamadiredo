@@ -5,7 +5,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import HeaderBerandaOwner from '../../components/Com Header/HeaderBerandaOwner';
 import AnimatedButton from '../../components/Design/AnimatedButton';
-import MembershipExplanationModal from '../../components/Modal/MembershipExplanationModal';
 import MembershipDetailModal from '../../components/Modal/MembershipDetailModal';
 import instance from '../../config/api';
 import { FaEdit, FaToggleOn, FaToggleOff, FaPlus, FaSearch, FaCrown, FaPercent, FaEye } from 'react-icons/fa';
@@ -63,11 +62,9 @@ const MembershipManagement = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingMembership, setEditingMembership] = useState(null);
-  const [showExplanationModal, setShowExplanationModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedMembershipId, setSelectedMembershipId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showMinPointsExplanation, setShowMinPointsExplanation] = useState(false);
 
   // React Hook Form setup
   const {
@@ -95,12 +92,6 @@ const MembershipManagement = () => {
   const watchedPrice = watch('price');
 
   // Check if explanation modal has been shown before
-  useEffect(() => {
-    const hasSeenExplanation = localStorage.getItem('membership-explanation-seen');
-    if (!hasSeenExplanation) {
-      setShowExplanationModal(true);
-    }
-  }, []);
 
   useEffect(() => {
     // Get tenant_id and user role from API
@@ -268,14 +259,6 @@ const MembershipManagement = () => {
   };
 
   // Handle explanation modal
-  const handleExplanationClose = () => {
-    setShowExplanationModal(false);
-  };
-
-  const handleExplanationConfirm = () => {
-    localStorage.setItem('membership-explanation-seen', 'true');
-    setShowExplanationModal(false);
-  };
 
   // Handle detail modal
   const openDetailModal = (membershipId) => {
@@ -287,7 +270,6 @@ const MembershipManagement = () => {
     setShowDetailModal(false);
     setSelectedMembershipId(null);
   };
-
 
   const formatPrice = (price) => {
     return formatCurrency(price, { showSymbol: true, minimumFractionDigits: 0 });
@@ -374,16 +356,6 @@ const MembershipManagement = () => {
               </button>
               )}
               
-              {/* Help Button - Secondary */}
-              <button
-                onClick={() => setShowExplanationModal(true)}
-                className="px-3 py-2.5 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-50 hover:border-gray-300 hover:shadow-md transition-all duration-300 flex items-center justify-center"
-                title="Bantuan & Panduan Membership"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </button>
             </div>
 
             {/* Summary Info - Tokopedia Style */}
@@ -1269,13 +1241,6 @@ const MembershipManagement = () => {
           </div>
         </div>
       )}
-
-      {/* Explanation Modal */}
-      <MembershipExplanationModal
-        isOpen={showExplanationModal}
-        onClose={handleExplanationClose}
-        onConfirm={handleExplanationConfirm}
-      />
 
       {/* Detail Modal */}
       <MembershipDetailModal

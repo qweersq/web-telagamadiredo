@@ -26,7 +26,6 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
 import { getOperationalReport, getReferralReport, getPointReport } from './api/operationalApi';
 import { getUserProfile } from '../../utils/userProfileHelper';
-import OperationalExplanationModal from '../../components/Modal/OperationalExplanationModal';
 import ReferralReportModal from '../../components/Modal/ReferralReportModal';
 import PointReportModal from '../../components/Modal/PointReportModal';
 import instance from '../../config/api';
@@ -44,7 +43,6 @@ const OperationalReport = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
-  const [showExplanationModal, setShowExplanationModal] = useState(false);
   const [isExportingOrders, setIsExportingOrders] = useState(false);
   const [showAllServices, setShowAllServices] = useState(false);
   const [isNotaFree, setIsNotaFree] = useState(false);
@@ -546,15 +544,6 @@ const OperationalReport = () => {
               )}
 
               {/* Info Button - Hidden for NotaFree */}
-              {!isNotaFree && (
-                <button
-                  onClick={() => setShowExplanationModal(true)}
-                  className="w-10 h-10 bg-blue-100 hover:bg-blue-200 rounded-lg flex items-center justify-center transition-all duration-200 group-hover:scale-105"
-                  title="Informasi Laporan Operasional"
-                >
-                  <Info className="w-5 h-5 text-blue-600 group-hover:text-blue-700" />
-                </button>
-              )}
 
               {!isNotaFree && (
                 <div className="text-xs text-gray-500 font-montserrat">
@@ -1457,12 +1446,6 @@ const OperationalReport = () => {
           </div>
         </div>
       )}
-
-      {/* Explanation Modal */}
-      <OperationalExplanationModal
-        isOpen={showExplanationModal}
-        onClose={() => setShowExplanationModal(false)}
-      />
 
       {/* Referral Report Modal */}
       <ReferralReportModal

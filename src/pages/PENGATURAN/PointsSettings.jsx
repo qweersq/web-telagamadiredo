@@ -5,7 +5,6 @@ import AnimatedButton from '../../components/Design/AnimatedButton';
 import instance from '../../config/api';
 import { Coins, Info, AlertCircle, CheckCircle, RefreshCw, RotateCcw, Users, X, TrendingUp, Gift, Clock, Award } from 'lucide-react';
 import CustomerMultiSelectModal from '../../components/Modal/CustomerMultiSelectModal';
-import PointsExplanationModal from '../../components/Modal/PointsExplanationModal';
 
 const PointsSettings = () => {
   const navigate = useNavigate();
@@ -16,7 +15,6 @@ const PointsSettings = () => {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [showEarnStudyCase, setShowEarnStudyCase] = useState(false);
   const [showRedeemStudyCase, setShowRedeemStudyCase] = useState(false);
-  const [showPointsExplanationModal, setShowPointsExplanationModal] = useState(false);
   
   // Recalculate states
   const [recalculateScope, setRecalculateScope] = useState('all'); // 'all' or 'selected'
@@ -60,12 +58,6 @@ const PointsSettings = () => {
   }, []);
 
   // Check if explanation modal should be shown on first visit
-  useEffect(() => {
-    const hasSeenExplanation = localStorage.getItem('points_explanation_seen');
-    if (!hasSeenExplanation) {
-      setShowPointsExplanationModal(true);
-    }
-  }, []);
 
   const fetchSettings = async () => {
     try {
@@ -404,13 +396,6 @@ const PointsSettings = () => {
                 )}
                 {/* Button untuk membuka modal panduan */}
                 <div className="mt-4 pt-4 border-t border-gray-200">
-                  <AnimatedButton
-                    onClick={() => setShowPointsExplanationModal(true)}
-                    className="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-600 text-white rounded-xl font-semibold font-montserrat hover:from-orange-600 hover:to-amber-700 transition-colors flex items-center justify-center gap-2 shadow-md"
-                  >
-                    <Info className="w-5 h-5" />
-                    Panduan Sistem Poin
-                  </AnimatedButton>
                 </div>
               </div>
 
@@ -1469,15 +1454,9 @@ const PointsSettings = () => {
         </div>
       )}
 
-      {/* Points Explanation Modal */}
-      <PointsExplanationModal
-        isOpen={showPointsExplanationModal}
-        onClose={() => setShowPointsExplanationModal(false)}
-      />
     </div>
   );
 };
 
 export default PointsSettings;
-
 

@@ -1,19 +1,17 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Search, Edit, Trash2, MapPin, Users, Navigation, Wifi, WifiOff, Info, Building2, Store, RefreshCw, Phone, Utensils, Ticket, Layers } from 'lucide-react';
+import {useState} from 'react';
+import {useNavigate} from 'react-router-dom';
+import {ArrowLeft, Plus, Search, Edit, Trash2, MapPin, Users, Navigation, Wifi, WifiOff, Info, Building2, Store, RefreshCw, Phone, Utensils, Ticket, Layers} from 'lucide-react';
 import HeaderBerandaOwner from '../../components/Com Header/HeaderBerandaOwner';
 import AnimatedButton from '../../components/Design/AnimatedButton';
-import BranchExplanationModal from '../../components/Modal/BranchExplanationModal';
-import { LocationPickerModal } from '../../components/LocationPicker';
-import { SubscriptionLimitsCard, SubscriptionValidationModal } from '../../components/SubscriptionLimits';
+import {LocationPickerModal} from '../../components/LocationPicker';
+import {SubscriptionLimitsCard, SubscriptionValidationModal} from '../../components/SubscriptionLimits';
 import BranchDetailModal from '../../components/BRANCH/BranchDetailModal';
 import SubscriptionValidationService from '../../services/subscriptionValidationService';
 import instance from '../../config/api';
-import { getUserProfile } from '../../utils/userProfileHelper';
-import { validateFullPhone } from '../../utils/phoneValidation';
+import {getUserProfile} from '../../utils/userProfileHelper';
+import {validateFullPhone} from '../../utils/phoneValidation';
 import PhoneInputWithCountry from '../../components/PhoneInput/PhoneInputWithCountry';
-import { createMitraRelation, getMitrasByParent, deleteMitraRelation } from './api/branchMitraApi';
-
+import {createMitraRelation, getMitrasByParent, deleteMitraRelation} from './api/branchMitraApi';
 
 const BranchManagement = () => {
   const navigate = useNavigate();
@@ -26,7 +24,6 @@ const BranchManagement = () => {
   const [editingBranch, setEditingBranch] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [branchToDelete, setBranchToDelete] = useState(null);
-  const [showExplanationModal, setShowExplanationModal] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState(null);
@@ -62,34 +59,6 @@ const BranchManagement = () => {
   const [mitraLoading, setMitraLoading] = useState(false);
   const [showAddMitraModal, setShowAddMitraModal] = useState(false);
   const [selectedMitraToAdd, setSelectedMitraToAdd] = useState('');
-
-
-  useEffect(() => {
-    const loadTenantId = async () => {
-      try {
-        const profile = await getUserProfile();
-        if (profile?.tenant?.id) {
-          setFormData(prev => ({ ...prev, tenant_id: profile.tenant.id }));
-        }
-
-        // ✅ Load subscription data for validation
-        if (profile && profile.subscription) {
-          setSubscriptionData(profile.subscription);
-        }
-      } catch (error) {
-        console.error('❌ BranchManagement - Failed to load tenant ID:', error);
-      }
-    };
-
-    fetchBranches();
-    loadTenantId();
-
-    // Check if user has seen explanation before
-    const hasSeenExplanation = localStorage.getItem('branch_explanation_seen');
-    if (!hasSeenExplanation) {
-      setShowExplanationModal(true);
-    }
-  }, []);
 
   const fetchBranches = async () => {
     try {
@@ -690,13 +659,6 @@ const BranchManagement = () => {
                   <Plus className="h-4 w-4" />
                   <span>Tambah Outlet</span>
                 </button>
-                <button
-                  onClick={() => setShowExplanationModal(true)}
-                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-telaga-100 bg-telaga-50 text-telaga-700 transition-colors hover:bg-telaga-100"
-                  title="Panduan manajemen outlet"
-                >
-                  <Info className="h-5 w-5" />
-                </button>
               </div>
             </div>
 
@@ -887,7 +849,6 @@ const BranchManagement = () => {
                 )}
               </div>
             )}
-
 
             {/* Branches List - Tokopedia Style */}
             {mainTab === 'branches' && (
@@ -1867,12 +1828,6 @@ const BranchManagement = () => {
           </div>
         </div>
       )}
-
-      {/* Branch Explanation Modal */}
-      <BranchExplanationModal
-        isOpen={showExplanationModal}
-        onClose={() => setShowExplanationModal(false)}
-      />
 
       {/* Location Picker Modal */}
       <LocationPickerModal

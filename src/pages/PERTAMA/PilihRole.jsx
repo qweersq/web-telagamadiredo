@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ConfirmRoleModal from "../../components/Modal/ConfirmRoleModal";
 import BranchSelectionModal from "../../components/Modal/BranchSelectionModal";
-import RoleExplanationModal from "../../components/Modal/RoleExplanationModal";
 import AttendancePromptModal from "../../components/Modal/AttendancePromptModal";
 import AnimatedButton from "../../components/Design/AnimatedButton";
 import { WithRole, BERANDA_ACCESS } from '../../utils/roleValidator';
@@ -15,7 +14,6 @@ const PilihRole = () => {
   const [selectedRole, setSelectedRole] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showBranchModal, setShowBranchModal] = useState(false);
-  const [showRoleExplanationModal, setShowRoleExplanationModal] = useState(false);
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -92,21 +90,6 @@ const PilihRole = () => {
 
   const handleRoleSelect = (role) => {
     setSelectedRole(role);
-    
-    // Show explanation modal for all roles, only once per role
-    const userRole = userProfile?.user?.role || userProfile?.user?.user_role;
-    
-    // Get array of roles that user has already seen explanations for
-    const seenRolesString = localStorage.getItem('seenRoleExplanations');
-    const seenRoles = seenRolesString ? JSON.parse(seenRolesString) : [];
-    const hasSeenThisRole = seenRoles.includes(role);
-    
-    
-    if (!hasSeenThisRole) {
-      // Just show the modal, don't mark as seen yet
-      localStorage.setItem('selectedRoleForExplanation', role);
-      setShowRoleExplanationModal(true);
-    }
   };
 
   const handleContinue = async () => {
@@ -214,29 +197,6 @@ const PilihRole = () => {
 
   const handleCloseBranchModal = () => {
     setShowBranchModal(false);
-  };
-
-  const handleCloseRoleExplanationModal = () => {
-    setShowRoleExplanationModal(false);
-    // Don't clear localStorage - keep the flag so modal won't show again
-  };
-
-  const handleConfirmRoleFromModal = () => {
-    // Mark this role as seen when user clicks "Pilih Peran Ini"
-    const seenRolesString = localStorage.getItem('seenRoleExplanations');
-    const seenRoles = seenRolesString ? JSON.parse(seenRolesString) : [];
-    
-    if (!seenRoles.includes(selectedRole)) {
-      const updatedSeenRoles = [...seenRoles, selectedRole];
-      localStorage.setItem('seenRoleExplanations', JSON.stringify(updatedSeenRoles));
-      
-    }
-    
-    // Close modal and continue with role selection
-    setShowRoleExplanationModal(false);
-    
-    // Continue with the normal flow
-    handleContinue();
   };
 
   const handleBranchConfirm = async (selectedBranch, role) => {
@@ -718,12 +678,6 @@ const PilihRole = () => {
         selectedRole={selectedRole}
       />
       
-      <RoleExplanationModal
-        isOpen={showRoleExplanationModal}
-        onClose={handleCloseRoleExplanationModal}
-        onConfirm={handleConfirmRoleFromModal}
-        selectedRole={selectedRole}
-      />
       
       <AttendancePromptModal
         isOpen={showAttendanceModal}

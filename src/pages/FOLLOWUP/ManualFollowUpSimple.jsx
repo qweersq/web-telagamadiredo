@@ -16,7 +16,6 @@ import {
 import HeaderBerandaOwner from '../../components/Com Header/HeaderBerandaOwner';
 import AnimatedButton from '../../components/Design/AnimatedButton';
 import HelpTooltip from '../../components/WhatsAppTemplate/HelpTooltip';
-import ManualFollowUpExplanationModal from '../../components/Modal/ManualFollowUpExplanationModal';
 import FollowUpHistoryModal from '../../components/Modal/FollowUpHistoryModal';
 import instance from '../../config/api';
 import { getUserProfile, getTenantBusinessName } from '../../utils/userProfileHelper';
@@ -96,7 +95,6 @@ const ManualFollowUpSimple = () => {
   const [businessName, setBusinessName] = useState('NAMA_BISNIS');
   
   // State untuk modal penjelasan
-  const [showExplanationModal, setShowExplanationModal] = useState(false);
 
   // State untuk modal riwayat follow-up
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -365,15 +363,8 @@ const ManualFollowUpSimple = () => {
   };
 
   // Handle explanation modal confirmation
-  const handleExplanationConfirm = () => {
-    localStorage.setItem('manual-followup-explanation-seen', 'true');
-    setShowExplanationModal(false);
-  };
 
   // Handle explanation modal close
-  const handleExplanationClose = () => {
-    setShowExplanationModal(false);
-  };
 
   // Truncate customer name to 2 words max
   const truncateCustomerName = (name) => {
@@ -414,12 +405,6 @@ const ManualFollowUpSimple = () => {
           fetchPeriodTabs(),
           fetchTemplates()
         ]);
-
-        // Check if user has seen the explanation modal
-        const hasSeenExplanation = localStorage.getItem('manual-followup-explanation-seen');
-        if (!hasSeenExplanation) {
-          setShowExplanationModal(true);
-        }
       } catch (error) {
         console.error('❌ Error loading initial data:', error);
       } finally {
@@ -481,16 +466,6 @@ const ManualFollowUpSimple = () => {
                 <span className="hidden sm:inline">Riwayat</span>
               </button>
 
-              {/* Help Button - Secondary */}
-              <button
-                onClick={() => setShowExplanationModal(true)}
-                className="shrink-0 px-3 py-2.5 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-50 hover:border-gray-300 hover:shadow-md transition-all duration-300 flex items-center justify-center"
-                title="Bantuan & Panduan Follow-Up"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </button>
             </div>
 
             {/* Info Card - Only show when no filter applied */}
@@ -512,7 +487,6 @@ const ManualFollowUpSimple = () => {
                 </div>
               </div>
             )}
-
 
             {/* Customer List */}
             {hasFiltered && (
@@ -1023,13 +997,6 @@ const ManualFollowUpSimple = () => {
           </div>
         </div>
       )}
-
-      {/* Explanation Modal */}
-      <ManualFollowUpExplanationModal
-        isOpen={showExplanationModal}
-        onClose={handleExplanationClose}
-        onConfirm={handleExplanationConfirm}
-      />
 
       {/* Riwayat Follow-Up Modal */}
       <FollowUpHistoryModal

@@ -14,7 +14,6 @@ import FinanceAddExpenseModal from './components/FinanceAddExpenseModal';
 import FinanceAddExternalIncomeModal from './components/FinanceAddExternalIncomeModal';
 import FinanceCashToBankModal from './components/FinanceCashToBankModal';
 import FinanceAccountSummaryCards from './components/FinanceAccountSummaryCards';
-import FinanceDashboardExplanationModal from '../../components/Modal/FinanceDashboardExplanationModal';
 import { getDailySummary, getDailyTransactions, addExpense, addExternalIncome, transferCashToBank, getBranches, getAccountSummary } from './api/financeApi';
 import { getUserProfile } from '../../utils/userProfileHelper';
 import { FaFilter, FaTimes, FaMapMarkerAlt, FaCalendarAlt } from 'react-icons/fa';
@@ -122,7 +121,6 @@ const FinanceDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   // State untuk explanation modal
-  const [showExplanationModal, setShowExplanationModal] = useState(false);
 
   // Load userData
   const loadUserData = async () => {
@@ -401,7 +399,6 @@ const FinanceDashboard = () => {
 
       const validatedTransactions = validateTransactions(transactionsData.transactions || []);
 
-
       if (append) {
         setTransactions(prev => [...prev, ...validatedTransactions]);
       } else {
@@ -534,7 +531,6 @@ const FinanceDashboard = () => {
     return filteredTransactions;
   };
 
-
   // Load more transactions (button click)
   const loadMoreTransactions = async () => {
     if (pagination.hasNext && !loadingMore) {
@@ -659,7 +655,6 @@ const FinanceDashboard = () => {
     }
   };
 
-
   // Get account type color
   const getAccountTypeColor = (type) => {
     switch (type) {
@@ -680,22 +675,8 @@ const FinanceDashboard = () => {
   }, []);
 
   // Check if explanation modal should be shown
-  useEffect(() => {
-    const hasSeenExplanation = localStorage.getItem('finance-dashboard-explanation-seen');
-    if (!hasSeenExplanation) {
-      setShowExplanationModal(true);
-    }
-  }, []);
 
   // Handle explanation modal
-  const handleExplanationConfirm = () => {
-    localStorage.setItem('finance-dashboard-explanation-seen', 'true');
-    setShowExplanationModal(false);
-  };
-
-  const handleExplanationClose = () => {
-    setShowExplanationModal(false);
-  };
 
   // Restore state from localStorage on component mount
   useEffect(() => {
@@ -795,16 +776,6 @@ const FinanceDashboard = () => {
                 <span>Filter Data Finance</span>
               </button>
 
-              {/* Help Button */}
-              <button
-                onClick={() => setShowExplanationModal(true)}
-                className="px-3 py-4 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
-                title="Bantuan & Panduan Transaksi Keuangan"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </button>
             </div>
 
             {/* Selected Filter Info */}
@@ -888,7 +859,6 @@ const FinanceDashboard = () => {
               onTransferSuccess={handleTransferSuccess}
             />
 
-
             {/* Transaction Tabs */}
             {/* <FinanceTransactionTabs
               activeTab={activeTab}
@@ -920,7 +890,6 @@ const FinanceDashboard = () => {
           </div>
         </div>
       </main>
-
 
       {/* Transaction Detail Modal */}
       <FinanceTransactionDetailModal
@@ -1080,12 +1049,6 @@ const FinanceDashboard = () => {
         transaction={selectedTransaction}
       />
 
-      {/* Finance Dashboard Explanation Modal */}
-      <FinanceDashboardExplanationModal
-        isOpen={showExplanationModal}
-        onClose={handleExplanationClose}
-        onConfirm={handleExplanationConfirm}
-      />
     </div>
   );
 };

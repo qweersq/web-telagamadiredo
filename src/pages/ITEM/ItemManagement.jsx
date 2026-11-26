@@ -1,12 +1,10 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import {useState, useEffect} from 'react';
+import {useNavigate} from 'react-router-dom';
 import HeaderBerandaOwner from '../../components/Com Header/HeaderBerandaOwner';
 import AnimatedButton from '../../components/Design/AnimatedButton';
-import ItemExplanationModal from '../../components/Modal/ItemExplanationModal';
-import { searchItems } from '../ORDER/api/orderApi';
+import {searchItems} from '../ORDER/api/orderApi';
 import instance from '../../config/api';
-import { FaEdit, FaToggleOn, FaToggleOff, FaPlus, FaSearch } from 'react-icons/fa';
-import { getUserProfile } from '../../utils/userProfileHelper';
+import {FaEdit, FaToggleOn, FaToggleOff, FaPlus, FaSearch} from 'react-icons/fa';
 
 const ItemManagement = ({ isFromAdmin = false }) => {
   const navigate = useNavigate();
@@ -42,7 +40,6 @@ const ItemManagement = ({ isFromAdmin = false }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // State untuk modal penjelasan
-  const [showExplanationModal, setShowExplanationModal] = useState(false);
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -54,28 +51,6 @@ const ItemManagement = ({ isFromAdmin = false }) => {
     hasNextPage: false,
     hasPrevPage: false
   });
-
-  useEffect(() => {
-    // Get tenant_id from API
-    const loadTenantId = async () => {
-      try {
-        const profile = await getUserProfile();
-        if (profile?.tenant?.id) {
-          setTenantId(profile.tenant.id);
-        }
-      } catch (error) {
-        console.error('❌ ItemManagement - Failed to load tenant ID:', error);
-      }
-    };
-    
-    loadTenantId();
-    
-    // Check if user has seen the explanation modal
-    const hasSeenExplanation = localStorage.getItem('hasSeenItemExplanation');
-    if (!hasSeenExplanation) {
-      setShowExplanationModal(true);
-    }
-  }, []);
 
   useEffect(() => {
     if (tenantId) {
@@ -374,8 +349,6 @@ const ItemManagement = ({ isFromAdmin = false }) => {
         setSearchItemResults(results);
         
         // Show info message if available
-        if (paginationInfo?.message) {
-        }
       } catch (err) {
         setSearchItemResults([]);
       }
@@ -444,18 +417,9 @@ const ItemManagement = ({ isFromAdmin = false }) => {
     }
   };
 
-
-
   // Handle explanation modal confirmation
-  const handleExplanationConfirm = () => {
-    localStorage.setItem('hasSeenItemExplanation', 'true');
-    setShowExplanationModal(false);
-  };
 
   // Handle explanation modal close
-  const handleExplanationClose = () => {
-    setShowExplanationModal(false);
-  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -465,7 +429,6 @@ const ItemManagement = ({ isFromAdmin = false }) => {
     sessionStorage.removeItem('fromIzin');
     navigate('/');
   };
-
 
   if (loading) {
     return (
@@ -615,16 +578,6 @@ const ItemManagement = ({ isFromAdmin = false }) => {
                 <span>Tambah Item</span>
               </button>
               
-              {/* Help Button - Secondary */}
-              <button
-                onClick={() => setShowExplanationModal(true)}
-                className="px-3 py-2.5 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-50 hover:border-gray-300 hover:shadow-md transition-all duration-300 flex items-center justify-center"
-                title="Bantuan & Panduan Item"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </button>
             </div>
 
             {/* Items List - Tokopedia Style */}
@@ -1074,12 +1027,6 @@ const ItemManagement = ({ isFromAdmin = false }) => {
         </div>
       )}
 
-      {/* Item Explanation Modal */}
-      <ItemExplanationModal
-        isOpen={showExplanationModal}
-        onClose={handleExplanationClose}
-        onConfirm={handleExplanationConfirm}
-      />
     </div>
   );
 };

@@ -8,7 +8,6 @@ import { getMembershipBadgeColor, getMembershipDiscountDisplay, formatPhoneNumbe
 import HeaderBerandaOwner from '../../components/Com Header/HeaderBerandaOwner';
 import AnimatedButton from '../../components/Design/AnimatedButton';
 import AddMembershipModal from '../../components/Modal/AddMembershipModal';
-import CustomerExplanationModal from '../../components/Modal/CustomerExplanationModal';
 import CustomerDetailModal from '../../components/Modal/CustomerDetailModal';
 import CancelMembershipModal from '../../components/Modal/CancelMembershipModal';
 import CustomerImportModal from '../../components/Modal/CustomerImportModal';
@@ -62,7 +61,6 @@ const CustomerManagement = () => {
   const [sortBy, setSortBy] = useState('newest'); // 'newest', 'most_services'
   const [showAddMembershipModal, setShowAddMembershipModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [showExplanationModal, setShowExplanationModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailCustomer, setDetailCustomer] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -102,12 +100,6 @@ const CustomerManagement = () => {
   });
 
   // Check if explanation modal has been shown before
-  useEffect(() => {
-    const hasSeenExplanation = localStorage.getItem('customer-explanation-seen');
-    if (!hasSeenExplanation) {
-      setShowExplanationModal(true);
-    }
-  }, []);
 
   // Fetch tenant_id, branch_id, and user role from API
   useEffect(() => {
@@ -301,7 +293,6 @@ const CustomerManagement = () => {
     }
   };
 
-
   const handleCreate = async (data) => {
     try {
       setIsSubmitting(true);
@@ -400,7 +391,6 @@ const CustomerManagement = () => {
     }
   };
 
-
   const handleLoadMore = () => {
     if (hasNextPage && !loadingMore) {
       fetchCustomers(currentPage + 1, true);
@@ -455,7 +445,6 @@ const CustomerManagement = () => {
       throw error;
     }
   };
-
 
   const handleRemoveMembership = async (customer) => {
     try {
@@ -512,14 +501,6 @@ const CustomerManagement = () => {
   };
 
   // Handle explanation modal
-  const handleExplanationClose = () => {
-    setShowExplanationModal(false);
-  };
-
-  const handleExplanationConfirm = () => {
-    localStorage.setItem('customer-explanation-seen', 'true');
-    setShowExplanationModal(false);
-  };
 
   const handleDownloadCSV = async () => {
     try {
@@ -593,7 +574,6 @@ const CustomerManagement = () => {
       setIsDownloading(false);
     }
   };
-
 
   // Use customers directly since filtering is now done server-side
   const filteredCustomers = customers;
@@ -674,16 +654,6 @@ const CustomerManagement = () => {
                 <span>Tambah Pelanggan Baru</span>
               </button>
               
-              {/* Help Button - Secondary */}
-              <button
-                onClick={() => setShowExplanationModal(true)}
-                className="px-3 py-2.5 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-50 hover:border-gray-300 hover:shadow-md transition-all duration-300 flex items-center justify-center"
-                title="Bantuan & Panduan Pelanggan"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </button>
               </div>
               
               {/* Filter Button */}
@@ -1625,13 +1595,6 @@ const CustomerManagement = () => {
           }
         }}
         title="Tambah Membership ke"
-      />
-
-      {/* Explanation Modal */}
-      <CustomerExplanationModal
-        isOpen={showExplanationModal}
-        onClose={handleExplanationClose}
-        onConfirm={handleExplanationConfirm}
       />
 
       {/* Customer Detail Modal */}

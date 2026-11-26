@@ -1,14 +1,12 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import {useState, useEffect} from 'react';
+import {useNavigate} from 'react-router-dom';
 import HeaderBerandaOwner from '../../components/Com Header/HeaderBerandaOwner';
 import AnimatedButton from '../../components/Design/AnimatedButton';
-import TreatmentExplanationModal from '../../components/Modal/TreatmentExplanationModal';
 import instance from '../../config/api';
-import { FaEdit, FaToggleOn, FaToggleOff, FaPlus, FaSearch } from 'react-icons/fa';
-import { Ticket, Package, Boxes, Check } from 'lucide-react';
-import { getUserProfile } from '../../utils/userProfileHelper';
-import { stockService } from '../../services/stockService';
-import { branchService } from '../../services/branchService';
+import {FaEdit, FaToggleOn, FaToggleOff, FaPlus, FaSearch} from 'react-icons/fa';
+import {Ticket, Package, Boxes, Check} from 'lucide-react';
+import {stockService} from '../../services/stockService';
+import {branchService} from '../../services/branchService';
 const TreatmentManagement = () => {
   const navigate = useNavigate();
   // Semua data diambil sekaligus supaya angka di tab kategori akurat
@@ -69,7 +67,6 @@ const TreatmentManagement = () => {
   const [customTypeService, setCustomTypeService] = useState('');
   const [displayPrice, setDisplayPrice] = useState('');
 
-
   // State untuk options dari API
   const [typeItemOptions, setTypeItemOptions] = useState([]);
   const [typeServiceOptions, setTypeServiceOptions] = useState([]);
@@ -77,7 +74,6 @@ const TreatmentManagement = () => {
   const [loadingOptions, setLoadingOptions] = useState(false);
 
   // State untuk modal penjelasan
-  const [showExplanationModal, setShowExplanationModal] = useState(false);
 
   // Pagination states
   const [pagination, setPagination] = useState({
@@ -88,28 +84,6 @@ const TreatmentManagement = () => {
     hasNextPage: false,
     hasPrevPage: false
   });
-
-  useEffect(() => {
-    // Get tenant_id from API
-    const loadTenantId = async () => {
-      try {
-        const profile = await getUserProfile();
-        if (profile?.tenant?.id) {
-          setTenantId(profile.tenant.id);
-        }
-      } catch (error) {
-        console.error('❌ TreatmentManagement - Failed to load tenant ID:', error);
-      }
-    };
-
-    loadTenantId();
-
-    // Check if user has seen the explanation modal
-    const hasSeenExplanation = localStorage.getItem('hasSeenTreatmentExplanation');
-    if (!hasSeenExplanation) {
-      setShowExplanationModal(true);
-    }
-  }, []);
 
   useEffect(() => {
     if (tenantId) {
@@ -188,7 +162,6 @@ const TreatmentManagement = () => {
     );
     if (!exists) setActiveCategory('');
   }, [productCategoryOptions, activeCategory]);
-
 
   const fetchTreatments = async () => {
     try {
@@ -355,7 +328,6 @@ const TreatmentManagement = () => {
       setIsSubmitting(false);
     }
   };
-
 
   const handleUpdate = async () => {
     // Prevent double submission
@@ -842,15 +814,8 @@ const TreatmentManagement = () => {
   };
 
   // Handle explanation modal confirmation
-  const handleExplanationConfirm = () => {
-    localStorage.setItem('hasSeenTreatmentExplanation', 'true');
-    setShowExplanationModal(false);
-  };
 
   // Handle explanation modal close
-  const handleExplanationClose = () => {
-    setShowExplanationModal(false);
-  };
 
   if (loading) {
     return (
@@ -1035,15 +1000,6 @@ const TreatmentManagement = () => {
                 >
                   <FaPlus className="h-3 w-3" />
                   Tambah Item
-                </button>
-                <button
-                  onClick={() => setShowExplanationModal(true)}
-                  className="flex h-[42px] w-[42px] items-center justify-center rounded-xl border border-telaga-100 bg-telaga-50/60 text-telaga-600 transition-all hover:border-telaga-200 hover:bg-telaga-50 active:scale-[0.98]"
-                  title="Bantuan & Panduan Layanan"
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
                 </button>
               </div>
             </div>
@@ -1616,12 +1572,6 @@ const TreatmentManagement = () => {
         </div>
       )}
 
-      {/* Treatment Explanation Modal */}
-      <TreatmentExplanationModal
-        isOpen={showExplanationModal}
-        onClose={handleExplanationClose}
-        onConfirm={handleExplanationConfirm}
-      />
     </div>
   );
 };

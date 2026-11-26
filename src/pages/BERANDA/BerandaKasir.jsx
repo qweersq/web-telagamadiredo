@@ -11,7 +11,6 @@ import AnimatedButton from "../../components/Design/AnimatedButton";
 import DateRangePickerV2 from "../../components/DateRangePicker/DateRangePickerV2";
 import OpenShiftModal from './SHIFT/OpenShiftModal';
 import ItemDoneTemplateModal from "../../components/QuickInput/ItemDoneTemplateModal";
-import CalendarExplanationModal from "../../components/Modal/CalendarExplanationModal";
 import PhotoGalleryModal from '../../components/Modal/PhotoGalleryModal';
 import {
   saveFilterToStorage,
@@ -85,7 +84,6 @@ const BerandaKasir = () => {
   const [isNotaFree, setIsNotaFree] = useState(false);
   const [showProFeatureModal, setShowProFeatureModal] = useState(false);
   const [proFeatureName, setProFeatureName] = useState('');
-  const [showCalendarExplanationModal, setShowCalendarExplanationModal] = useState(false);
 
   // State untuk Admin Notes
   const [pendingNotesCount, setPendingNotesCount] = useState(0);
@@ -343,7 +341,6 @@ const BerandaKasir = () => {
         24 // 24 hours expiration
       );
 
-
       // Close modal and navigate
       setShowSearchModal(false);
       navigate('/orders', { state: { from: '/berandakasir' } });
@@ -454,7 +451,6 @@ const BerandaKasir = () => {
         branch_id: userData?.branch_id
       };
 
-
       const response = await instance.get('/beranda-kasir/counts', { params });
 
       if (response.data && response.data.success) {
@@ -482,7 +478,6 @@ const BerandaKasir = () => {
         tenant_id: userData?.tenant_id,
         branch_id: userData?.branch_id
       };
-
 
       const response = await instance.get('/beranda-kasir/orders', { params });
 
@@ -591,7 +586,6 @@ const BerandaKasir = () => {
       setShowOperationPanel(true); // modal baru untuk status order
     } 
   };
-
 
   const getStatusColor = (status) => {
     const statusColors = {
@@ -861,7 +855,6 @@ const BerandaKasir = () => {
     return Object.values(grouped);
   };
 
-
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden font-montserrat bg-krem">
       <Header
@@ -974,15 +967,6 @@ const BerandaKasir = () => {
                       </span>
                     </div>
                   </AnimatedButton>
-                  {false && (
-                    <button
-                      onClick={() => setShowCalendarExplanationModal(true)}
-                      className="w-[45px] h-[45px] flex items-center justify-center rounded-xl bg-telaga-100 hover:bg-telaga-200 text-telaga-900/70 hover:text-telaga-900 transition-colors border-2 border-telaga-200 hover:border-telaga-300 shadow-sm hover:shadow-md"
-                      title="Penjelasan Calendar"
-                    >
-                      <HelpCircle className="w-5 h-5" />
-                    </button>
-                  )}
                 </div>
                 )}
 
@@ -1030,7 +1014,6 @@ const BerandaKasir = () => {
             <div className="mb-6">
               {/* Filter Buttons Grid */}
               <div className="bg-white rounded-2xl p-4 shadow-sm border border-telaga-100 mb-4">
-
 
                 {/* Order Status Section */}
                 <div className="mb-6">
@@ -1622,7 +1605,6 @@ Buka shift sekarang?"
         </div>
       )}
 
-
       {/* Pro Feature Modal */}
       {showProFeatureModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-telaga-950/60 p-4">
@@ -1712,12 +1694,6 @@ Buka shift sekarang?"
           </div>
         </div>
       )}
-
-      {/* Calendar Explanation Modal */}
-      <CalendarExplanationModal
-        isOpen={showCalendarExplanationModal}
-        onClose={() => setShowCalendarExplanationModal(false)}
-      />
 
       <PhotoGalleryModal
         isOpen={showGallery}

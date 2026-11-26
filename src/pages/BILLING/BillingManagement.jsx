@@ -31,7 +31,6 @@ const BillingManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'upcoming', 'paid', 'pending'
   const [showFilterModal, setShowFilterModal] = useState(false);
-  const [showExplanationModal, setShowExplanationModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedBilling, setSelectedBilling] = useState(null);
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
@@ -330,13 +329,6 @@ const BillingManagement = () => {
                       </div>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setShowExplanationModal(true)}
-                    className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 transition-all duration-200 hover:shadow-md"
-                    title="Bantuan & Panduan Billing"
-                  >
-                    <Info className="w-4 h-4" />
-                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -860,47 +852,6 @@ const BillingManagement = () => {
                 ) : (
                   <span className="truncate">Ubah Plan</span>
                 )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Explanation Modal */}
-      {showExplanationModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-gray-800 font-montserrat">
-                Billing Management
-              </h3>
-              <button
-                onClick={() => setShowExplanationModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <XCircle className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="space-y-4 text-sm text-gray-600 font-montserrat">
-              <p>
-                Halaman ini menampilkan informasi lengkap tentang langganan dan pembayaran Anda sebagai user aktif.
-              </p>
-              <ul className="list-disc list-inside space-y-2">
-                <li>Status langganan aktif</li>
-                <li>Ringkasan statistik billing</li>
-                <li>Riwayat pembayaran lengkap</li>
-                <li>Tagihan yang akan datang</li>
-                <li>Opsi untuk mengubah paket</li>
-              </ul>
-            </div>
-
-            <div className="flex justify-end mt-6">
-              <button
-                onClick={() => setShowExplanationModal(false)}
-                className="px-4 py-3 bg-blue-500 border-2 border-blue-500 text-white rounded-xl font-semibold text-sm hover:bg-blue-600 hover:border-blue-600 transition-all duration-200 font-montserrat w-full sm:w-auto"
-              >
-                <span className="truncate">Mengerti</span>
               </button>
             </div>
           </div>

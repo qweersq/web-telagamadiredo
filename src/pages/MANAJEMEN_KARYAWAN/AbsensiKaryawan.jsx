@@ -1,12 +1,10 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import {useState, useEffect} from 'react';
+import {useNavigate} from 'react-router-dom';
 import HeaderBerandaOwner from '../../components/Com Header/HeaderBerandaOwner';
-import AttendanceExplanationModal from '../../components/Modal/AttendanceExplanationModal';
 import instance from '../../config/api';
-import { getUserProfile } from '../../utils/userProfileHelper';
-import { getRoleLabel } from '../../utils/roleValidator';
-import { FaClock, FaCheckCircle, FaMapMarkerAlt, FaExclamationTriangle, FaCalendarAlt, FaUserClock, FaEdit, FaTrash, FaFilter, FaTimes } from 'react-icons/fa';
-import { Info } from 'lucide-react';
+import {getRoleLabel} from '../../utils/roleValidator';
+import {FaClock, FaCheckCircle, FaMapMarkerAlt, FaExclamationTriangle, FaCalendarAlt, FaUserClock, FaEdit, FaTrash, FaFilter, FaTimes} from 'react-icons/fa';
+import {Info} from 'lucide-react';
 
 const AbsensiKaryawan = () => {
   const navigate = useNavigate();
@@ -26,7 +24,6 @@ const AbsensiKaryawan = () => {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [editingAttendance, setEditingAttendance] = useState(null);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
-  const [showExplanationModal, setShowExplanationModal] = useState(false);
   const [editForm, setEditForm] = useState({
     date: '',
     clock_in: '',
@@ -34,30 +31,6 @@ const AbsensiKaryawan = () => {
     status: '',
     notes: ''
   });
-
-  useEffect(() => {
-    // Get user role and tenant_id from API
-    const loadUserData = async () => {
-      try {
-        const profile = await getUserProfile();
-        setUserRole(profile?.user?.role || '');
-        setTenantId(profile?.tenant?.id || '');
-        setUserData(profile);
-      } catch (error) {
-        console.error('❌ AbsensiKaryawan - Failed to load user data:', error);
-      } finally {
-        setLoading(false); // ⭐ Reset loading state
-      }
-    };
-    
-    loadUserData();
-    
-    // Check if user has seen explanation before
-    const hasSeenExplanation = localStorage.getItem('attendance_explanation_seen');
-    if (!hasSeenExplanation) {
-      setShowExplanationModal(true);
-    }
-  }, []);
 
   useEffect(() => {
     if (tenantId && userData) {
@@ -471,13 +444,6 @@ const AbsensiKaryawan = () => {
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-sm font-bold text-telaga-950">Filter Absensi</h3>
                 <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => setShowExplanationModal(true)}
-                    className="flex h-8 w-8 items-center justify-center rounded-xl border border-telaga-100 bg-telaga-50 text-telaga-700 transition-colors hover:bg-telaga-100"
-                    title="Panduan manajemen absensi"
-                  >
-                    <Info className="h-4 w-4" />
-                  </button>
                   <button
                     onClick={() => {
                       setShowFilterModal(true);
@@ -971,11 +937,6 @@ const AbsensiKaryawan = () => {
         </div>
       )}
 
-      {/* Attendance Explanation Modal */}
-      <AttendanceExplanationModal
-        isOpen={showExplanationModal}
-        onClose={() => setShowExplanationModal(false)}
-      />
     </div>
   );
 };

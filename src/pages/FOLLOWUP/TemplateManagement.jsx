@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, Eye, MessageSquare, FileText } from 'lucide-react';
 import HeaderBerandaOwner from '../../components/Com Header/HeaderBerandaOwner';
 import AnimatedButton from '../../components/Design/AnimatedButton';
-import TemplateExplanationModal from '../../components/Modal/TemplateExplanationModal';
 import instance from '../../config/api';
 import { getUserProfile, getTenantBusinessName } from '../../utils/userProfileHelper';
 
@@ -25,7 +24,6 @@ const TemplateManagement = () => {
   const [businessName, setBusinessName] = useState('NAMA_BISNIS');
 
   // State untuk modal penjelasan
-  const [showExplanationModal, setShowExplanationModal] = useState(false);
 
   // Removed MAX_TEMPLATES limit
 
@@ -34,16 +32,6 @@ const TemplateManagement = () => {
       setCurrentTime(new Date().toLocaleTimeString());
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    initializeData();
-
-    // Check if user has seen the explanation modal
-    const hasSeenExplanation = localStorage.getItem('template-explanation-seen');
-    if (!hasSeenExplanation) {
-      setShowExplanationModal(true);
-    }
   }, []);
 
   // Fetch business name on mount
@@ -91,7 +79,6 @@ const TemplateManagement = () => {
       console.error('Error initializing data:', error);
     }
   };
-
 
   const loadTemplates = async () => {
     if (!tenantId) return;
@@ -181,16 +168,8 @@ const TemplateManagement = () => {
   };
 
   // Handle explanation modal confirmation
-  const handleExplanationConfirm = () => {
-    localStorage.setItem('template-explanation-seen', 'true');
-    setShowExplanationModal(false);
-  };
 
   // Handle explanation modal close
-  const handleExplanationClose = () => {
-    setShowExplanationModal(false);
-  };
-
 
   const getCategoryColor = (category) => {
     const colors = {
@@ -215,7 +194,6 @@ const TemplateManagement = () => {
       </div>
     );
   }
-
 
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden font-montserrat">
@@ -250,7 +228,6 @@ const TemplateManagement = () => {
               </div>
             </div>
 
-
             {/* Action Buttons - Tokopedia Style */}
             <div className="mb-6 flex gap-3">
               {/* Add Button - Primary */}
@@ -266,16 +243,6 @@ const TemplateManagement = () => {
                 </button>
               )}
 
-              {/* Help Button - Secondary */}
-              <button
-                onClick={() => setShowExplanationModal(true)}
-                className="px-3 py-2.5 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-50 hover:border-gray-300 hover:shadow-md transition-all duration-300 flex items-center justify-center"
-                title="Bantuan & Panduan Template"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </button>
             </div>
 
             {/* Templates List */}
@@ -495,12 +462,6 @@ const TemplateManagement = () => {
         </div>
       )}
 
-      {/* Template Explanation Modal */}
-      <TemplateExplanationModal
-        isOpen={showExplanationModal}
-        onClose={handleExplanationClose}
-        onConfirm={handleExplanationConfirm}
-      />
     </div>
   );
 };

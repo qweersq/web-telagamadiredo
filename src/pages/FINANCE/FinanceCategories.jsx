@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HeaderBerandaOwner from '../../components/Com Header/HeaderBerandaOwner';
 import AnimatedButton from '../../components/Design/AnimatedButton';
-import FinanceCategoriesExplanationModal from '../../components/Modal/FinanceCategoriesExplanationModal';
 import instance from '../../config/api';
 import { getUserProfile } from '../../utils/userProfileHelper';
 import { 
@@ -25,7 +24,6 @@ const FinanceCategories = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredCategories, setFilteredCategories] = useState([]);
   const [userData, setUserData] = useState(null);
-  const [showExplanationModal, setShowExplanationModal] = useState(false);
 
   // Form data
   const [formData, setFormData] = useState({
@@ -38,16 +36,6 @@ const FinanceCategories = () => {
     { value: 'debit', label: 'Pengeluaran', icon: ArrowDown, color: 'text-red-600' },
     { value: 'credit', label: 'Pemasukan', icon: ArrowUp, color: 'text-green-600' }
   ];
-
-  useEffect(() => {
-    loadUserData();
-    
-    // Check if user has seen the explanation modal
-    const hasSeenExplanation = localStorage.getItem('finance-categories-explanation-seen');
-    if (!hasSeenExplanation) {
-      setShowExplanationModal(true);
-    }
-  }, []);
 
   useEffect(() => {
     if (userData) {
@@ -141,7 +129,6 @@ const FinanceCategories = () => {
     setShowCreateModal(true);
   };
 
-
   const getCategoryIcon = (type) => {
     const categoryType = categoryTypes.find(t => t.value === type);
     return categoryType ? categoryType.icon : Tag;
@@ -161,15 +148,8 @@ const FinanceCategories = () => {
   };
 
   // Handle explanation modal confirmation
-  const handleExplanationConfirm = () => {
-    localStorage.setItem('finance-categories-explanation-seen', 'true');
-    setShowExplanationModal(false);
-  };
 
   // Handle explanation modal close
-  const handleExplanationClose = () => {
-    setShowExplanationModal(false);
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 font-montserrat">
@@ -196,16 +176,6 @@ const FinanceCategories = () => {
             <span>Tambah Kategori</span>
           </button>
           
-          {/* Help Button - Secondary */}
-          <button
-            onClick={() => setShowExplanationModal(true)}
-            className="px-3 py-2.5 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-50 hover:border-gray-300 hover:shadow-md transition-all duration-300 flex items-center justify-center"
-            title="Bantuan & Panduan Kategori"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </button>
         </div>
 
         {/* Summary Info - Tokopedia Style */}
@@ -514,12 +484,6 @@ const FinanceCategories = () => {
         </div>
       )}
 
-      {/* Explanation Modal */}
-      <FinanceCategoriesExplanationModal
-        isOpen={showExplanationModal}
-        onClose={handleExplanationClose}
-        onConfirm={handleExplanationConfirm}
-      />
     </div>
   );
 };
