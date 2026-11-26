@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+  overflow: auto;
+}
+
+@media screen and (max-height: 500px) {
+  html, body, #root {
+    height: auto;
+    overflow-y: auto;
+  }
+}
+
+/* Prevent zoom on input focus on mobile */
+@media screen and (max-width: 767px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Safe area utilities for iPhone */
+@supports (padding: max(0px)) {
+  .pb-safe {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  
+  .pt-safe {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+  
+  .pl-safe {
+    padding-left: max(1rem, env(safe-area-inset-left));
+  }
+  
+  .pr-safe {
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+  
+  .mb-safe {
+    margin-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  
+  .mt-safe {
+    margin-top: max(1rem, env(safe-area-inset-top));
+  }
+}
+
+.loader {
+  width: 40px;
+  aspect-ratio: 2;
+  --_g: no-repeat radial-gradient(circle closest-side,#000 90%,#0000);
+  background: 
+    var(--_g) 0%   50%,
+    var(--_g) 50%  50%,
+    var(--_g) 100% 50%;
+  background-size: calc(100%/3) 50%;
+  animation: l3 1s infinite linear;
+}
+
+@keyframes l3 {
+    20%{background-position:0%   0%, 50%  50%,100%  50%}
+    40%{background-position:0% 100%, 50%   0%,100%  50%}
+    60%{background-position:0%  50%, 50% 100%,100%   0%}
+    80%{background-position:0%  50%, 50%  50%,100% 100%}
+}
+
+/* Modal animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Bottom sheet slide-up animation */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* Custom scrollbar styling */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Touch improvements for mobile */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Button hover effects for better touch feedback */
+.button-touch {
+  transition: all 0.2s ease;
+}
+
+.button-touch:hover {
+  transform: scale(1.05);
+}
+
+.button-touch:active {
+  transform: scale(0.95);
+}
+
+/* Ensure minimum touch target size */
+.min-touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}

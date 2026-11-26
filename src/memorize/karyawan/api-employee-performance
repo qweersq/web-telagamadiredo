@@ -1,0 +1,407 @@
+# API Documentation - Employee Performance System
+
+## 🔗 Base URL
+```
+http://localhost:3000/api
+```
+
+## 🔐 Authentication
+Semua endpoint memerlukan authentication token di header:
+```
+Authorization: Bearer <token>
+```
+
+## 📋 Endpoints
+
+### 1. **GET /api/employees**
+Mendapatkan list semua karyawan aktif dengan pagination dan filter.
+
+**Query Parameters:**
+- `page` (optional): Halaman yang diminta (default: 1)
+- `pageSize` (optional): Jumlah data per halaman (default: 10)
+- `branch_id` (optional): Filter berdasarkan ID cabang
+- `status` (optional): Filter berdasarkan status karyawan
+- `search` (optional): Pencarian berdasarkan nama, email, atau phone
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "employees": [
+      {
+        "id": 1,
+        "name": "John Doe",
+        "email": "john@example.com",
+        "phone": "08123456789",
+        "status": "active",
+        "role": "employee",
+        "salary": 5000000,
+        "branch_id": 1,
+        "Branch": {
+          "id": 1,
+          "name": "Cabang A"
+        }
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "pageSize": 10,
+      "total": 25,
+      "totalPages": 3
+    }
+  }
+}
+```
+
+### 2. **GET /api/employees/:id**
+Mendapatkan detail informasi karyawan.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "John Doe",
+    "email": "john@example.com",
+    "phone": "08123456789",
+    "address": "Jl. Contoh No. 123",
+    "status": "active",
+    "role": "employee",
+    "salary": 5000000,
+    "salary_date": "2025-01-01",
+    "branch_id": 1,
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "Branch": {
+      "id": 1,
+      "name": "Cabang A"
+    }
+  }
+}
+```
+
+### 3. **GET /api/employees/:id/summary**
+Mendapatkan ringkasan performa karyawan dalam periode tertentu.
+
+**Query Parameters:**
+- `start_date` (optional): Tanggal mulai (format: YYYY-MM-DD, default: awal bulan ini)
+- `end_date` (optional): Tanggal akhir (format: YYYY-MM-DD, default: akhir bulan ini)
+- `period_type` (optional): Tipe periode (daily/weekly/monthly, default: monthly)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "employee": {
+      "id": 1,
+      "name": "John Doe",
+      "email": "john@example.com",
+      "phone": "08123456789",
+      "status": "active",
+      "role": "employee",
+      "salary": 5000000,
+      "branch_id": 1,
+      "Branch": {
+        "id": 1,
+        "name": "Cabang A"
+      }
+    },
+    "summary": {
+      "attendance": {
+        "total_days": 22,
+        "present_days": 20,
+        "attendance_rate": 90.91,
+        "total_work_hours": 176.5,
+        "average_work_hours": 8.83
+      },
+      "delivery": {
+        "total_deliveries": 15,
+        "total_distance": 450.5,
+        "total_cost": 225000,
+        "total_quantity": 45,
+        "average_distance": 30.03,
+        "average_cost": 15000
+      },
+      "processed_items": {
+        "total_items": 85,
+        "completed_items": 75,
+        "pending_items": 5,
+        "processing_items": 5,
+        "not_yet_items": 3,
+        "antrian_items": 2,
+        "completion_rate": 88.24
+      }
+    }
+  }
+}
+```
+
+### 4. **GET /api/employees/:id/attendance**
+Mendapatkan data absensi karyawan dalam periode tertentu.
+
+**Query Parameters:**
+- `start_date` (optional): Tanggal mulai (format: YYYY-MM-DD, default: awal bulan ini)
+- `end_date` (optional): Tanggal akhir (format: YYYY-MM-DD, default: akhir bulan ini)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "employee_id": 1,
+      "branch_id": 1,
+      "date": "2025-01-01",
+      "clock_in": "08:00:00",
+      "clock_out": "17:00:00",
+      "status": "present",
+      "description": null,
+      "work_duration": "09:00:00",
+      "photo_clock_in": "photo_url.jpg",
+      "createdAt": "2025-01-01T08:00:00.000Z",
+      "updatedAt": "2025-01-01T17:00:00.000Z"
+    }
+  ]
+}
+```
+
+### 5. **GET /api/employees/:id/deliveries**
+Mendapatkan data delivery karyawan dalam periode tertentu dengan pagination dan summary.
+
+**Query Parameters:**
+- `page` (optional): Halaman yang diminta (default: 1)
+- `pageSize` (optional): Jumlah data per halaman (default: 10)
+- `start_date` (optional): Tanggal mulai (format: YYYY-MM-DD, default: awal bulan ini)
+- `end_date` (optional): Tanggal akhir (format: YYYY-MM-DD, default: akhir bulan ini)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "deliveries": [
+      {
+        "id": 1,
+        "users_id": 1,
+        "quantity": 3,
+        "date": "2025-01-01",
+        "total_distance": 25.5,
+        "total_cost": 15000,
+        "odo_start": 1000,
+        "odo_end": 1025,
+        "odo_start_photo_url": "photo1.jpg",
+        "odo_end_photo_url": "photo2.jpg",
+        "createdAt": "2025-01-01T08:00:00.000Z",
+        "updatedAt": "2025-01-01T17:00:00.000Z"
+      }
+    ],
+    "summary": {
+      "total_deliveries": 15,
+      "total_distance": 450.5,
+      "total_cost": 225000,
+      "total_quantity": 45,
+      "average_distance": 30.03,
+      "average_cost": 15000,
+      "average_quantity": 3
+    },
+    "pagination": {
+      "page": 1,
+      "pageSize": 10,
+      "total": 15,
+      "totalPages": 2
+    }
+  }
+}
+```
+
+### 6. **GET /api/employees/:id/processed-items**
+Mendapatkan data item yang diproses karyawan berdasarkan status logs (updated_by) dalam periode tertentu dengan pagination dan summary.
+
+**Query Parameters:**
+- `page` (optional): Halaman yang diminta (default: 1)
+- `pageSize` (optional): Jumlah data per halaman (default: 10)
+- `start_date` (optional): Tanggal mulai (format: YYYY-MM-DD, default: awal bulan ini)
+- `end_date` (optional): Tanggal akhir (format: YYYY-MM-DD, default: akhir bulan ini)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": 9589,
+        "order_detail_id": 9589,
+        "employee_id": 23,
+        "treatment_id": 1,
+        "item_id": 1,
+        "final_price": 70000,
+        "status": "antrian",
+        "description": "Cuci + Reparasi",
+        "createdAt": "2025-08-01T08:00:00.000Z",
+        "updatedAt": "2025-08-01T10:30:00.000Z",
+        "item": {
+          "id": 1,
+          "name": "Sepatu Nike"
+        },
+        "treatment": {
+          "id": 1,
+          "name": "Cuci + Reparasi"
+        },
+        "status_logs": [
+          {
+            "id": 1622,
+            "order_detail_id": 9589,
+            "old_status": "not_yet",
+            "new_status": "antrian",
+            "updated_by": 23,
+            "created_at": "2025-08-01T10:30:00.000Z",
+            "status_updater": {
+              "id": 23,
+              "name": "John Doe"
+            }
+          }
+        ]
+      }
+    ],
+    "summary": {
+      "total_items": 85,
+      "completed_items": 75,
+      "pending_items": 5,
+      "processing_items": 5,
+      "not_yet_items": 3,
+      "antrian_items": 2,
+      "total_revenue": 5950000,
+      "average_revenue_per_item": 70000,
+      "completion_rate": 88.24
+    },
+    "pagination": {
+      "page": 1,
+      "pageSize": 10,
+      "total": 85,
+      "totalPages": 9
+    }
+  }
+}
+```
+
+### 7. **GET /api/employees/:id/performance-chart**
+Mendapatkan data untuk grafik performa karyawan.
+
+**Query Parameters:**
+- `start_date` (optional): Tanggal mulai (format: YYYY-MM-DD, default: awal bulan ini)
+- `end_date` (optional): Tanggal akhir (format: YYYY-MM-DD, default: akhir bulan ini)
+- `chart_type` (optional): Tipe grafik (work_hours/processed_items/delivery_cost, default: work_hours)
+
+**Response untuk work_hours:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "date": "2025-01-01",
+      "work_hours": 8.5,
+      "status": "present"
+    },
+    {
+      "date": "2025-01-02",
+      "work_hours": 9.0,
+      "status": "present"
+    }
+  ]
+}
+```
+
+**Response untuk processed_items:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "date": "2025-01-01",
+      "count": 5
+    },
+    {
+      "date": "2025-01-02",
+      "count": 3
+    }
+  ]
+}
+```
+
+**Response untuk delivery_cost:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "date": "2025-01-01",
+      "cost": 15000,
+      "distance": 25.5
+    },
+    {
+      "date": "2025-01-02",
+      "cost": 20000,
+      "distance": 30.0
+    }
+  ]
+}
+```
+
+## 🚨 Error Responses
+
+### 400 Bad Request
+```json
+{
+  "success": false,
+  "message": "Invalid Employee ID",
+  "status": 400
+}
+```
+
+### 401 Unauthorized
+```json
+{
+  "success": false,
+  "message": "Unauthorized",
+  "status": 401
+}
+```
+
+### 403 Forbidden
+```json
+{
+  "success": false,
+  "message": "Access denied",
+  "status": 403
+}
+```
+
+### 404 Not Found
+```json
+{
+  "success": false,
+  "message": "Employee not found",
+  "status": 404
+}
+```
+
+### 500 Internal Server Error
+```json
+{
+  "success": false,
+  "message": "Internal server error",
+  "status": 500
+}
+```
+
+## 📝 Notes
+- Semua endpoint memerlukan authentication
+- Format tanggal menggunakan YYYY-MM-DD
+- Pagination dimulai dari halaman 1
+- Data diurutkan berdasarkan tanggal terbaru (DESC) kecuali untuk grafik
+- Status karyawan yang aktif adalah 'active'
+- Role karyawan adalah 'employee'

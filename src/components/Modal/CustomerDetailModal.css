@@ -1,0 +1,26 @@
+/* Customer Detail Modal Custom Styles */
+.customer-detail-modal {
+  height: 95vh;
+}
+
+@media (min-width: 768px) {
+  .customer-detail-modal {
+    height: 90vh;
+  }
+}
+
+/* Ensure content area takes remaining space */
+.customer-detail-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Hide scrollbar for tabs */
+.customer-detail-tabs {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.customer-detail-tabs::-webkit-scrollbar {
+  display: none;
+}
