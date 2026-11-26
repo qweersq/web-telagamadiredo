@@ -192,7 +192,7 @@ const BerandaDapur = () => {
       await result;
     } catch (err) {
       console.error("❌ BerandaDapur - gagal cetak tiket:", err);
-      alert("Gagal mencetak tiket. Pastikan printer sudah dipilih di menu Printer.");
+      alert("Gagal mencetak tiket. Hubungkan printer lewat tombol Printer di menu cetak, lalu coba lagi.");
     } finally {
       if (isMountedRef.current) setPrintingOrderId(null);
     }

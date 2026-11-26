@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import instance from '../../../config/api';
 import { getUserProfile } from '../../../utils/userProfileHelper';
+import { thermalPrinterService } from '../../../services/thermalPrinterService';
 
 export const usePrinterStatus = () => {
   const [printerStatus, setPrinterStatus] = useState(null);
@@ -36,12 +37,22 @@ export const usePrinterStatus = () => {
         const printers = response.data.data || [];
         
         if (printers.length === 0) {
-          setPrinterStatus({
-            status: 'error',
-            message: 'Tidak ada printer yang dikonfigurasi untuk cabang ini',
-            action: 'setup',
-            actionText: 'Setup Printer'
-          });
+          const localPrinter = thermalPrinterService.getLocalPrinter();
+          if (localPrinter) {
+            setPrinterStatus({
+              status: 'success',
+              message: 'Printer terhubung langsung dari browser ini',
+              printerCount: 1,
+              activeCount: 1,
+              defaultPrinter: localPrinter.device_name,
+              printers: [localPrinter]
+            });
+          } else {
+            setPrinterStatus({
+              status: 'error',
+              message: 'Belum ada printer. Hubungkan printer Bluetooth dari tombol di atas.'
+            });
+          }
         } else {
           const activePrinters = printers.filter(p => p.status === 'active');
           const defaultPrinter = printers.find(p => p.is_default);
@@ -64,10 +75,22 @@ export const usePrinterStatus = () => {
       }
     } catch (error) {
       console.error('Error checking printer status:', error);
-      setPrinterStatus({
-        status: 'error',
-        message: 'Terjadi kesalahan saat mengecek status printer: ' + (error.response?.data?.message || error.message)
-      });
+      const localPrinter = thermalPrinterService.getLocalPrinter();
+      if (localPrinter) {
+        setPrinterStatus({
+          status: 'success',
+          message: 'Printer terhubung langsung dari browser ini',
+          printerCount: 1,
+          activeCount: 1,
+          defaultPrinter: localPrinter.device_name,
+          printers: [localPrinter]
+        });
+      } else {
+        setPrinterStatus({
+          status: 'error',
+          message: 'Belum ada printer. Hubungkan printer Bluetooth dari tombol di atas.'
+        });
+      }
     } finally {
       setCheckingPrinter(false);
     }

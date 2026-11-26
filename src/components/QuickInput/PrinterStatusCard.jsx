@@ -23,7 +23,7 @@ const PrinterStatusCard = ({ printerStatus, checkingPrinter, onCheckStatus }) =>
               printerStatus.status === 'warning' ? 'bg-senja-500' : 'bg-red-500'
             }`}></div>
             <span className="text-sm text-telaga-900/80 font-montserrat font-medium">
-              {printerStatus.status === 'success' ? 'Printer Tersedia' : 'Printer Tidak Dikonfigurasi'}
+              {printerStatus.status === 'success' ? 'Printer Tersedia' : 'Printer Belum Terhubung'}
             </span>
           </div>
           

@@ -48,6 +48,8 @@ const QuickOrderPrintReceipt = ({ order, onClose, hideCloseButton = false }) => 
   const [selectedPrinter, setSelectedPrinter] = useState(null);
   const [printerList, setPrinterList] = useState([]);
   const [isLoadingPrinters, setIsLoadingPrinters] = useState(false);
+  const [isConnectingPrinter, setIsConnectingPrinter] = useState(false);
+  const [printerSource, setPrinterSource] = useState(null); // 'server' | 'local'
   const [printerError, setPrinterError] = useState(null);
   const [invoiceUrl, setInvoiceUrl] = useState('');
   const [invoiceStatus, setInvoiceStatus] = useState('');
@@ -308,6 +310,81 @@ const QuickOrderPrintReceipt = ({ order, onClose, hideCloseButton = false }) => 
     }
   };
 
+  // Simpan pilihan printer ke thermalPrinterService (termasuk device id untuk
+  // reconnect senyap di print berikutnya).
+  const applyPrinter = (printer, paperWidthOverride = null) => {
+    if (!printer) return false;
+    const paperWidth = paperWidthOverride || printer.paper_width;
+    thermalPrinterService.addPrinterConfig(
+      printer.device_name,
+      printer.service_uuid,
+      printer.characteristic_uuid,
+      paperWidth
+    );
+    thermalPrinterService.setCurrentPrinter({
+      name: printer.device_name,
+      service_uuid: printer.service_uuid,
+      characteristic_uuid: printer.characteristic_uuid,
+      paper_width: paperWidth,
+      device_id: printer.device_id || printer.deviceId || null,
+      status: printer.status || 'active',
+      is_default: true
+    });
+    return true;
+  };
+
+  // Fallback: pakai printer yang sudah tersimpan di browser (tanpa daftar server)
+  const applyLocalPrinter = () => {
+    const localPrinter = thermalPrinterService.getLocalPrinter();
+    if (!localPrinter) return false;
+    setSelectedPrinter(localPrinter);
+    setPrinterSource('local');
+    applyPrinter(localPrinter);
+    return true;
+  };
+
+  // Hubungkan / ganti printer langsung dari browser (tanpa Printer Management)
+  const handleConnectPrinter = async () => {
+    setIsConnectingPrinter(true);
+    setPrintError(null);
+    try {
+      const printer = await thermalPrinterService.pairPrinter();
+      setSelectedPrinter(printer);
+      setPrinterSource('local');
+      setPrinterList((prev) => [
+        ...prev.filter((p) => p.device_id !== printer.device_id && p.device_name !== printer.device_name),
+        printer
+      ]);
+      applyPrinter(printer);
+      checkPrinterStatus();
+    } catch (error) {
+      // NotFoundError = user menutup chooser, tidak perlu alert
+      if (error?.name !== 'NotFoundError') {
+        console.error('Connect printer error:', error);
+        alert(error?.message || 'Gagal menghubungkan printer.');
+      }
+    } finally {
+      setIsConnectingPrinter(false);
+    }
+  };
+
+  // Pastikan ada printer siap pakai. Kalau belum pernah dipilih, buka chooser
+  // Bluetooth sekali lalu simpan hasilnya di browser.
+  const ensurePrinter = async () => {
+    if (selectedPrinter) return selectedPrinter;
+
+    const printer = await thermalPrinterService.pairPrinter();
+    setSelectedPrinter(printer);
+    setPrinterSource('local');
+    setPrinterList((prev) => [
+      ...prev.filter((p) => p.device_id !== printer.device_id && p.device_name !== printer.device_name),
+      printer
+    ]);
+    applyPrinter(printer);
+    checkPrinterStatus();
+    return printer;
+  };
+
   // Fetch printers from API based on current branch
   const fetchPrinters = async () => {
     setIsLoadingPrinters(true);
@@ -339,33 +416,28 @@ const QuickOrderPrintReceipt = ({ order, onClose, hideCloseButton = false }) => 
         const printers = printersResponse.data.data || [];
         setPrinterList(printers);
 
-        // Set default printer (first active printer or first printer)
-        const activePrinter = printers.find(p => p.status === 'active') || printers[0];
+        // Prioritas: printer default dari server, lalu yang aktif
+        const activePrinter = printers.find(p => p.is_default)
+          || printers.find(p => p.status === 'active')
+          || printers[0];
+
         if (activePrinter) {
           setSelectedPrinter(activePrinter);
-
-          // Add printer config dan set current printer seperti di PrinterManagement
-          thermalPrinterService.addPrinterConfig(
-            activePrinter.device_name,
-            activePrinter.service_uuid,
-            activePrinter.characteristic_uuid,
-            activePrinter.paper_width
-          );
-          thermalPrinterService.setCurrentPrinter(activePrinter.device_name);
-
-        } else {
+          setPrinterSource('server');
+          applyPrinter(activePrinter);
+        } else if (!applyLocalPrinter()) {
+          // Tidak ada printer terdaftar: biarkan user hubungkan langsung
           console.warn('No printers found for this branch');
-          setPrinterError('Tidak ada printer yang tersedia untuk cabang ini');
+          setPrinterError('Belum ada printer. Hubungkan printer Bluetooth langsung dari tombol di atas.');
         }
       } else {
         throw new Error('Failed to fetch printers');
       }
     } catch (error) {
       console.error('Error fetching printers:', error);
-      setPrinterError('Gagal memuat daftar printer. Pastikan Anda sudah login dengan branch yang benar.');
-      // Fallback to thermal printer service default
-      const defaultPrinter = thermalPrinterService.getCurrentPrinter();
-      setSelectedPrinter(defaultPrinter);
+      if (!applyLocalPrinter()) {
+        setPrinterError('Belum ada printer. Hubungkan printer Bluetooth langsung dari tombol di atas.');
+      }
     } finally {
       setIsLoadingPrinters(false);
     }
@@ -945,16 +1017,8 @@ Salam hangat,
     const printer = printerList.find(p => p.id.toString() === printerId);
     if (printer) {
       setSelectedPrinter(printer);
-
-      // Add printer config dan set current printer seperti di PrinterManagement
-      thermalPrinterService.addPrinterConfig(
-        printer.device_name,
-        printer.service_uuid,
-        printer.characteristic_uuid,
-        printer.paper_width
-      );
-      thermalPrinterService.setCurrentPrinter(printer.device_name);
-
+      setPrinterSource(printer.source === 'local' ? 'local' : 'server');
+      applyPrinter(printer);
     }
   };
 
@@ -1133,10 +1197,6 @@ Salam hangat,
 
   // Handle print tiket dapur (satu tiket per dapur produksi)
   const handlePrintKitchenTickets = async () => {
-    if (!selectedPrinter) {
-      alert('Silakan pilih printer terlebih dahulu!');
-      return;
-    }
     if (!kitchenTickets.length) {
       alert('Tidak ada tiket dapur untuk dicetak.');
       return;
@@ -1145,13 +1205,8 @@ Salam hangat,
     setIsPrintingKitchen(true);
     setPrintError(null);
     try {
-      thermalPrinterService.addPrinterConfig(
-        selectedPrinter.device_name,
-        selectedPrinter.service_uuid,
-        selectedPrinter.characteristic_uuid,
-        selectedPrinter.paper_width
-      );
-      thermalPrinterService.setCurrentPrinter(selectedPrinter.device_name);
+      const printer = await ensurePrinter();
+      applyPrinter(printer);
 
       const result = await thermalPrinterService.printKitchenTickets(kitchenTickets);
       if (result === false || result === null || result === undefined) {
@@ -1161,6 +1216,7 @@ Salam hangat,
       alert(`Tiket dapur berhasil dicetak (${kitchenTickets.length} tiket)!`);
     } catch (error) {
       console.error('Print kitchen ticket error:', error);
+      if (error?.name === 'NotFoundError') return; // user menutup chooser Bluetooth
       setPrintError('Gagal mencetak tiket dapur. Pastikan printer terhubung.');
       alert('Gagal mencetak tiket dapur. Pastikan printer terhubung dan coba lagi.');
     } finally {
@@ -1174,14 +1230,8 @@ Salam hangat,
     setPrintError(null);
     try {
 
-      // Add printer config dan set current printer seperti di PrinterManagement
-      thermalPrinterService.addPrinterConfig(
-        selectedPrinter.device_name,
-        selectedPrinter.service_uuid,
-        selectedPrinter.characteristic_uuid,
-        selectedPrinter.paper_width
-      );
-      thermalPrinterService.setCurrentPrinter(selectedPrinter.device_name);
+      const printer = await ensurePrinter();
+      applyPrinter(printer);
 
       const result = await thermalPrinterService.printChecklist(resolvedOrder);
 
@@ -1206,14 +1256,8 @@ Salam hangat,
     setPrintError(null);
     try {
 
-      // Add printer config dan set current printer
-      thermalPrinterService.addPrinterConfig(
-        selectedPrinter.device_name,
-        selectedPrinter.service_uuid,
-        selectedPrinter.characteristic_uuid,
-        selectedPrinter.paper_width
-      );
-      thermalPrinterService.setCurrentPrinter(selectedPrinter.device_name);
+      const printer = await ensurePrinter();
+      applyPrinter(printer);
 
       // Filter order data berdasarkan selected items
       const filteredOrder = filterOrderBySelectedItems(resolvedOrder, selectedItemIds);
@@ -1692,6 +1736,34 @@ Salam hangat,
           </div>
         </div>
 
+        {/* Status printer + tombol hubungkan langsung (tanpa Printer Management) */}
+        <div className="flex-shrink-0 px-4 py-2 bg-telaga-50/70 border-b border-telaga-100 flex items-center gap-2">
+          <Printer className={`w-4 h-4 shrink-0 ${selectedPrinter ? 'text-telaga-600' : 'text-telaga-900/30'}`} />
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold font-montserrat text-telaga-900 truncate">
+              {selectedPrinter?.device_name || 'Belum ada printer'}
+            </p>
+            <p className="text-[10px] text-telaga-900/50 font-montserrat truncate">
+              {isConnectingPrinter
+                ? 'Menghubungkan printer...'
+                : printerSource === 'local'
+                  ? 'Tersimpan di browser ini'
+                  : selectedPrinter
+                    ? `${selectedPrinter.paper_width || 58}mm`
+                    : 'Hubungkan printer Bluetooth untuk mencetak'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleConnectPrinter}
+            disabled={isConnectingPrinter}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-telaga-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-telaga-700 transition hover:border-telaga-400 hover:bg-telaga-50 disabled:opacity-50 disabled:cursor-not-allowed font-montserrat"
+          >
+            <Bluetooth className={`w-3.5 h-3.5 ${isConnectingPrinter ? 'animate-pulse' : ''}`} />
+            {isConnectingPrinter ? 'Proses' : selectedPrinter ? 'Ganti' : 'Hubungkan'}
+          </button>
+        </div>
+
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto" style={{
           WebkitOverflowScrolling: 'touch',
@@ -1744,22 +1816,12 @@ Salam hangat,
                             await testPrintInvoice();
                           } else {
                             // Real print mode
-                            if (!selectedPrinter) {
-                              alert('Silakan pilih printer terlebih dahulu!');
-                              return;
-                            }
-
                             setIsPrinting(true);
                             setPrintError(null);
                             try {
-                              // Add printer config dan set current printer seperti di PrinterManagement
-                              thermalPrinterService.addPrinterConfig(
-                                selectedPrinter.device_name,
-                                selectedPrinter.service_uuid,
-                                selectedPrinter.characteristic_uuid,
-                                selectedPrinter.paper_width
-                              );
-                              thermalPrinterService.setCurrentPrinter(selectedPrinter.device_name);
+                              // Pastikan printer siap (pairing otomatis kalau belum ada)
+                              const printer = await ensurePrinter();
+                              applyPrinter(printer);
 
                               // Pastikan invoiceUrl ada di order data untuk QR Code
                               // ✅ Cek isFirstOrder dari customer total_orders (konsisten dengan mobile)
@@ -1780,6 +1842,7 @@ Salam hangat,
                               alert('Invoice berhasil dicetak!');
                             } catch (error) {
                               console.error('Print invoice error:', error);
+                              if (error?.name === 'NotFoundError') return;
                               setPrintError('Gagal mencetak invoice. Pastikan printer terhubung.');
                               alert('Gagal mencetak invoice. Pastikan printer terhubung dan coba lagi.');
                             } finally {
@@ -1787,7 +1850,7 @@ Salam hangat,
                             }
                           }
                         }}
-                        disabled={!testMode && (isPrinting || !selectedPrinter)}
+                        disabled={!testMode && isPrinting}
                         className={`flex-1 py-2.5 text-white rounded-xl font-montserrat font-semibold shadow-md shadow-telaga-600/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:bg-telaga-100 disabled:text-telaga-900/40 disabled:shadow-none disabled:cursor-not-allowed ${testMode
                             ? 'bg-gradient-to-r from-telaga-500 to-telaga-400 hover:from-telaga-600 hover:to-telaga-500'
                             : 'bg-gradient-to-r from-telaga-600 to-telaga-500 hover:from-telaga-700 hover:to-telaga-600'
@@ -1810,22 +1873,11 @@ Salam hangat,
                       {tenantInfo?.id === 180 && (
                         <button
                           onClick={async () => {
-                            if (!selectedPrinter) {
-                              alert('Silakan pilih printer terlebih dahulu!');
-                              return;
-                            }
-
                             setIsPrinting80mm(true);
                             setPrintError(null);
                             try {
-                              // Add printer config dan set current printer
-                              thermalPrinterService.addPrinterConfig(
-                                selectedPrinter.device_name,
-                                selectedPrinter.service_uuid,
-                                selectedPrinter.characteristic_uuid,
-                                80 // Force 80mm paper width
-                              );
-                              thermalPrinterService.setCurrentPrinter(selectedPrinter.device_name);
+                              const printer = await ensurePrinter();
+                              applyPrinter(printer, 80); // Force 80mm paper width
 
                               // Pastikan invoiceUrl ada di order data untuk QR Code
                               // ✅ Cek isFirstOrder dari customer total_orders (konsisten dengan mobile)
@@ -1846,13 +1898,14 @@ Salam hangat,
                               alert('Invoice 80mm berhasil dicetak!');
                             } catch (error) {
                               console.error('Print invoice 80mm error:', error);
+                              if (error?.name === 'NotFoundError') return;
                               setPrintError('Gagal mencetak invoice 80mm. Pastikan printer terhubung.');
                               alert('Gagal mencetak invoice 80mm. Pastikan printer terhubung dan coba lagi.');
                             } finally {
                               setIsPrinting80mm(false);
                             }
                           }}
-                          disabled={isPrinting80mm || !selectedPrinter}
+                          disabled={isPrinting80mm}
                           className="flex-1 py-2.5 text-white rounded-xl font-montserrat font-semibold shadow-md shadow-senja-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:bg-telaga-100 disabled:text-telaga-900/40 disabled:shadow-none disabled:cursor-not-allowed bg-gradient-to-r from-senja-500 to-senja-400 hover:from-senja-600 hover:to-senja-500"
                         >
                           <Bluetooth className="w-5 h-5" />
@@ -1995,7 +2048,7 @@ Salam hangat,
 
                 <button
                   onClick={handlePrintKitchenTickets}
-                  disabled={isPrintingKitchen || !selectedPrinter || kitchenTickets.length === 0}
+                  disabled={isPrintingKitchen || kitchenTickets.length === 0}
                   className="w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-telaga-600 hover:bg-telaga-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-montserrat"
                 >
                   {isPrintingKitchen
@@ -2174,22 +2227,11 @@ Salam hangat,
                       {tenantInfo?.id === 180 && (
                         <button
                           onClick={async () => {
-                            if (!selectedPrinter) {
-                              alert('Silakan pilih printer terlebih dahulu!');
-                              return;
-                            }
-
                             setIsPrintingChecklist(true);
                             setPrintError(null);
                             try {
-                              // Add printer config dan set current printer
-                              thermalPrinterService.addPrinterConfig(
-                                selectedPrinter.device_name,
-                                selectedPrinter.service_uuid,
-                                selectedPrinter.characteristic_uuid,
-                                80 // Force 80mm paper width
-                              );
-                              thermalPrinterService.setCurrentPrinter(selectedPrinter.device_name);
+                              const printer = await ensurePrinter();
+                              applyPrinter(printer, 80); // Force 80mm paper width
 
                               const result = await thermalPrinterService.printAllTags80mm(resolvedOrder);
 
@@ -2201,13 +2243,14 @@ Salam hangat,
                               alert(`Semua tag 80mm berhasil dicetak untuk ${totalItems} item!`);
                             } catch (error) {
                               console.error('Print all tags 80mm error:', error);
+                              if (error?.name === 'NotFoundError') return;
                               setPrintError('Gagal mencetak tag 80mm. Pastikan printer terhubung.');
                               alert('Gagal mencetak tag 80mm. Pastikan printer terhubung dan coba lagi.');
                             } finally {
                               setIsPrintingChecklist(false);
                             }
                           }}
-                          disabled={isPrintingChecklist || !selectedPrinter || totalItems === 0}
+                          disabled={isPrintingChecklist || totalItems === 0}
                           className="w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-montserrat"
                         >
                           {isPrintingChecklist

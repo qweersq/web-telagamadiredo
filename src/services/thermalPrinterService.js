@@ -6,6 +6,22 @@ import { imageToEscPos, textBlockToDataUrl, generateQRCodeImage } from '../utils
 import { printInvoice80mmBitmap, printAllTags80mmBitmap } from './thermalPrinterInvoice80mmBitmapService';
 import instance from '../config/api';
 
+const DEVICE_ID_KEY = 'thermalPrinterDeviceId';
+
+// Service UUID printer thermal yang umum. Dipakai saat pairing supaya
+// characteristic-nya bisa diakses tanpa perlu daftar ke server dulu.
+const COMMON_PRINTER_SERVICES = [
+  'e7810a71-73ae-499d-8c15-faa9aef0c3f2', // RPP02 & sejenis
+  '49535343-fe7d-4ae5-8fa9-9fafd205e455', // Microchip / ISSC
+  '000018f0-0000-1000-8000-00805f9b34fb', // Printer generik
+  '0000ffe0-0000-1000-8000-00805f9b34fb', // HM-10
+  '0000ffe1-0000-1000-8000-00805f9b34fb',
+  '0000ff00-0000-1000-8000-00805f9b34fb',
+  '0000fff0-0000-1000-8000-00805f9b34fb',
+  '0000180a-0000-1000-8000-00805f9b34fb', // Device Information
+  '0000180f-0000-1000-8000-00805f9b34fb'  // Battery
+];
+
 class ThermalPrinterService {
   constructor() {
     this.connectedDevice = null;
@@ -75,10 +91,12 @@ class ThermalPrinterService {
         paperWidth: printer.paper_width || 58,
         encoding: printer.encoding || 'CP437',
         deviceName: printer.device_name,
+        deviceId: printer.device_id || printer.deviceId || null,
         status: printer.status,
         isDefault: printer.is_default
       };
       localStorage.setItem('currentThermalPrinter', JSON.stringify(this.currentConfig));
+      if (this.currentConfig.deviceId) this.saveDeviceId(this.currentConfig.deviceId);
     } else {
       console.error('Invalid printer format:', printer);
       // Fallback to default
@@ -111,54 +129,206 @@ class ThermalPrinterService {
     return this.currentConfig;
   }
 
-  // Auto-detect available Bluetooth devices
-  async discoverPrinters() {
-    try {
-      const devices = await navigator.bluetooth.requestDevice({
-        filters: [
-          { services: ['e7810a71-73ae-499d-8c15-faa9aef0c3f2'] }, // Common thermal printer service
-          { namePrefix: 'RPP' }, // Common thermal printer prefix
-          { namePrefix: 'Thermal' },
-          { namePrefix: 'Printer' }
-        ],
-        optionalServices: ['e7810a71-73ae-499d-8c15-faa9aef0c3f2']
-      });
+  // ---- Printer Bluetooth tanpa perlu daftar ke server ----
+  // Device yang sudah pernah diizinkan disimpan id-nya di localStorage, lalu
+  // di-reconnect lewat navigator.bluetooth.getDevices() (tanpa chooser).
 
-      return devices;
-    } catch (error) {
-      console.error('Error discovering printers:', error);
-      throw error;
-    }
+  isBluetoothSupported() {
+    return typeof navigator !== 'undefined' && Boolean(navigator.bluetooth);
   }
 
-  // Connect to printer with current configuration
-  async connectToPrinter() {
+  getSavedDeviceId() {
+    return localStorage.getItem(DEVICE_ID_KEY);
+  }
+
+  saveDeviceId(deviceId) {
+    if (deviceId) localStorage.setItem(DEVICE_ID_KEY, deviceId);
+  }
+
+  clearSavedDeviceId() {
+    localStorage.removeItem(DEVICE_ID_KEY);
+  }
+
+  // Config printer yang tersimpan di browser saja (tanpa data dari server).
+  getLocalPrinter() {
+    const saved = localStorage.getItem('currentThermalPrinter');
+    if (!saved) return null;
+
+    let config = null;
     try {
-      const config = this.getCurrentPrinter();
-      console.log('Current printer config:', config);
-
-      if (!config || !config.name) {
-        throw new Error('Printer configuration is invalid or missing name property');
-      }
-
-      const options = {
-        filters: [{ name: config.name }],
-        optionalServices: [config.serviceUUID],
-      };
-
-      console.log('Bluetooth connection options:', options);
-      const device = await navigator.bluetooth.requestDevice(options);
-      const server = await device.gatt.connect();
-      const service = await server.getPrimaryService(config.serviceUUID);
-      const characteristic = await service.getCharacteristic(config.characteristicUUID);
-
-      this.connectedDevice = { device, server, service, characteristic };
-      console.log('Successfully connected to printer:', config.name);
-      return this.connectedDevice;
+      const parsed = JSON.parse(saved);
+      if (parsed && typeof parsed === 'object') config = parsed;
     } catch (error) {
-      console.error('Error connecting to printer:', error);
-      throw error;
+      // Format lama: hanya nama printer
+      config = this.printerConfigs[saved] || null;
     }
+    if (!config?.name) return null;
+
+    return {
+      id: `local-${config.name}`,
+      device_id: config.deviceId || this.getSavedDeviceId() || null,
+      device_name: config.name,
+      service_uuid: config.serviceUUID,
+      characteristic_uuid: config.characteristicUUID,
+      paper_width: config.paperWidth || 58,
+      status: 'active',
+      is_default: true,
+      source: 'local'
+    };
+  }
+
+  async requestPrinterDevice({ deviceName = null } = {}) {
+    if (!this.isBluetoothSupported()) {
+      throw new Error('Browser ini tidak mendukung Web Bluetooth. Gunakan Chrome atau Edge.');
+    }
+
+    const config = this.getCurrentPrinter() || {};
+    const optionalServices = Array.from(new Set([
+      ...COMMON_PRINTER_SERVICES,
+      ...(config.serviceUUID ? [config.serviceUUID] : [])
+    ]));
+
+    const options = deviceName
+      ? { filters: [{ name: deviceName }], optionalServices }
+      : { acceptAllDevices: true, optionalServices };
+
+    return navigator.bluetooth.requestDevice(options);
+  }
+
+  // Cari service + characteristic yang bisa ditulis (write / writeWithoutResponse)
+  async resolvePrinterCharacteristic(server, config = {}) {
+    const candidates = [];
+    if (config.serviceUUID) {
+      candidates.push({ serviceUuid: config.serviceUUID, characteristicUuid: config.characteristicUUID });
+    }
+    COMMON_PRINTER_SERVICES.forEach((uuid) => {
+      if (uuid !== config.serviceUUID) candidates.push({ serviceUuid: uuid });
+    });
+
+    for (const candidate of candidates) {
+      try {
+        const service = await server.getPrimaryService(candidate.serviceUuid);
+        let characteristic = null;
+        if (candidate.characteristicUuid) {
+          try {
+            characteristic = await service.getCharacteristic(candidate.characteristicUuid);
+          } catch (error) {
+            characteristic = null;
+          }
+        }
+        if (!characteristic) {
+          const chars = await service.getCharacteristics();
+          characteristic = chars.find((c) => c.properties.write || c.properties.writeWithoutResponse) || null;
+        }
+        if (characteristic) {
+          return { service, characteristic, serviceUUID: candidate.serviceUuid, characteristicUUID: characteristic.uuid };
+        }
+      } catch (error) {
+        // Service tidak ada di perangkat ini, lanjut ke kandidat berikutnya
+      }
+    }
+
+    // Terakhir: telusuri semua service yang boleh diakses halaman ini
+    try {
+      const services = await server.getPrimaryServices();
+      for (const service of services) {
+        const chars = await service.getCharacteristics();
+        const characteristic = chars.find((c) => c.properties.write || c.properties.writeWithoutResponse);
+        if (characteristic) {
+          return { service, characteristic, serviceUUID: service.uuid, characteristicUUID: characteristic.uuid };
+        }
+      }
+    } catch (error) {
+      // abaikan, lempar error di bawah
+    }
+
+    throw new Error('Tidak menemukan service printer yang bisa ditulis pada perangkat ini.');
+  }
+
+  async connectToDevice(device, config = {}) {
+    const server = device.gatt.connected ? device.gatt : await device.gatt.connect();
+    const resolved = await this.resolvePrinterCharacteristic(server, config);
+    this.connectedDevice = {
+      device,
+      server,
+      service: resolved.service,
+      characteristic: resolved.characteristic
+    };
+    return resolved;
+  }
+
+  // Simpan konfigurasi hasil koneksi ke localStorage supaya print berikutnya
+  // tidak perlu memilih perangkat lagi.
+  rememberConnection(device, resolved, fallback = {}) {
+    const name = device.name || fallback.name || 'Printer';
+    const paperWidth = fallback.paperWidth || fallback.paper_width || 58;
+
+    this.addPrinterConfig(name, resolved.serviceUUID, resolved.characteristicUUID, paperWidth);
+    this.currentConfig = {
+      name,
+      serviceUUID: resolved.serviceUUID,
+      characteristicUUID: resolved.characteristicUUID,
+      paperWidth,
+      encoding: fallback.encoding || 'CP437',
+      deviceName: name,
+      deviceId: device.id,
+      status: 'active',
+      isDefault: true
+    };
+    localStorage.setItem('currentThermalPrinter', JSON.stringify(this.currentConfig));
+    this.saveDeviceId(device.id);
+
+    return this.getLocalPrinter();
+  }
+
+  // Dipakai tombol "Hubungkan / Ganti Printer": selalu membuka chooser browser.
+  async pairPrinter() {
+    const currentConfig = this.getCurrentPrinter() || {};
+    const device = await this.requestPrinterDevice();
+    const resolved = await this.connectToDevice(device, currentConfig);
+    return this.rememberConnection(device, resolved, currentConfig);
+  }
+
+  // Auto-detect available Bluetooth devices
+  async discoverPrinters() {
+    return this.requestPrinterDevice();
+  }
+
+  // Connect ke printer. Default: coba senyap pakai device yang sudah diizinkan,
+  // baru buka chooser kalau gagal / belum pernah pairing.
+  async connectToPrinter({ silent = true, forcePrompt = false } = {}) {
+    if (this.connectedDevice?.server?.connected) {
+      return this.connectedDevice;
+    }
+
+    const config = this.getCurrentPrinter() || {};
+    const savedDeviceId = this.getSavedDeviceId();
+
+    if (!forcePrompt && silent && savedDeviceId && typeof navigator?.bluetooth?.getDevices === 'function') {
+      try {
+        const devices = await navigator.bluetooth.getDevices();
+        const device = devices.find((d) => d.id === savedDeviceId);
+        if (device) {
+          const resolved = await this.connectToDevice(device, config);
+          this.rememberConnection(device, resolved, config);
+          console.log('Reconnect ke printer tersimpan berhasil:', device.name);
+          return this.connectedDevice;
+        }
+      } catch (error) {
+        console.warn('Gagal reconnect ke printer tersimpan, membuka pemilihan printer:', error);
+        this.connectedDevice = null;
+      }
+    }
+
+    if (!this.isBluetoothSupported()) {
+      throw new Error('Browser ini tidak mendukung Web Bluetooth. Gunakan Chrome atau Edge.');
+    }
+
+    const device = await this.requestPrinterDevice({ deviceName: savedDeviceId ? config.name : null });
+    const resolved = await this.connectToDevice(device, config);
+    this.rememberConnection(device, resolved, config);
+    console.log('Terhubung ke printer:', device.name);
+    return this.connectedDevice;
   }
 
   // Send data to printer in chunks
