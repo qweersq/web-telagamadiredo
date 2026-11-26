@@ -132,6 +132,27 @@ function groupOrderDetailsForInvoice(orderDetails) {
   return Object.values(grouped);
 }
 
+function collectItemNotes(group) {
+  const notes = [];
+  const push = (value) => {
+    const note = String(value || '').trim();
+    if (!note || note === '-') return;
+    if (notes.some((existing) => existing.toLowerCase() === note.toLowerCase())) return;
+    notes.push(note);
+  };
+
+  if (group.custom_price_reason) push(group.custom_price_reason);
+
+  const items = Array.isArray(group.items) ? group.items : [];
+  items.forEach((item) => {
+    push(item?.description);
+    push(item?.notes);
+    push(item?.note);
+  });
+
+  return notes;
+}
+
 const InvoiceContentPreview = ({
   order,
   printType,
@@ -406,13 +427,15 @@ const InvoiceContentPreview = ({
     '0877-9545-2475';
   const branchName = branchInfo?.name || profileData?.branch?.name || '';
 
-  // Format tanggal (tanggal saja, tanpa time)
-  const dateField = order.entry_date || order.createdAt || order.created_at || order.date || order.order_date;
-  const formattedDate = dateField ? new Date(dateField).toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: '2-digit',
-    year: '2-digit'
-  }) : 'Tidak ada tanggal';
+  // Format tanggal + jam (mengikuti thermalPrinterInvoiceTemplate)
+  const dateField = order.createdAt || order.created_at || order.entry_date || order.date || order.order_date;
+  const formattedDate = (() => {
+    if (!dateField) return 'Tidak ada tanggal';
+    const d = new Date(dateField);
+    if (Number.isNaN(d.getTime())) return 'Tidak ada tanggal';
+    const p = (n) => String(n).padStart(2, '0');
+    return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${String(d.getFullYear()).slice(-2)} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  })();
 
   // Group order details dulu sebelum generate invoice
   const groupedOrderDetails = groupOrderDetailsForInvoice(order.order_details || []);
@@ -432,55 +455,10 @@ const InvoiceContentPreview = ({
       line2: rightAlign(`Harga (${qty}x${formatNumber(finalPricePerItem)})`, formatNumber(totalFinal))
     };
 
-    // Tambahkan custom_price_reason jika ada
-    if (group.custom_price_reason) {
-      lineData.reason = wrapText(`Ket: ${group.custom_price_reason}`, 30, 2);
-    }
-
-    // Tambahkan detail items jika ada
-    if (group.items && Array.isArray(group.items) && group.items.length > 0) {
-      const itemsText = [];
-      group.items.forEach((item, index) => {
-        // Get item data (support both item.item and direct item structure)
-        const itemName = item.item?.name || item.name || '';
-        const itemBrand = item.item?.brand || item.brand || '';
-        const itemNotes = item.notes || '';
-        
-        // Skip jika tidak ada data sama sekali
-        if (!itemName && !itemBrand) {
-          return;
-        }
-        
-        // ✅ Nomor antrian tag (reset harian per cabang) — biar pelanggan langsung tahu
-        const tagNumber = item.tag_number != null
-          ? item.tag_number
-          : (item.item?.tag_number != null ? item.item.tag_number : null);
-
-        // Build item text: [brand] [nama item]
-        let itemText = '';
-        if (itemBrand) {
-          itemText = `${itemBrand} ${itemName}`;
-        } else {
-          itemText = itemName;
-        }
-
-        if (tagNumber != null) {
-          itemText = `#${tagNumber} ${itemText}`;
-        }
-        
-        // Wrap text dan tambahkan indent
-        itemsText.push(wrapText(itemText, 30, 2));
-        
-        // Tambahkan notes jika ada
-        // if (itemNotes && itemNotes.trim()) {
-        //   const notesText = `Catatan: ${itemNotes.trim()}`;
-        //   itemsText.push(wrapText(notesText, 30, 4)); // Indent lebih dalam untuk notes
-        // }
-      });
-      
-      if (itemsText.length > 0) {
-        lineData.items = itemsText.join('\n');
-      }
+    // Keterangan / permintaan khusus per item (nomor tag & nama item tidak ditampilkan)
+    const notes = collectItemNotes(group);
+    if (notes.length > 0) {
+      lineData.items = notes.map((note) => wrapText(`Ket: ${note}`, 30, 2)).join('\n');
     }
 
     orderDetailsLines.push(lineData);
@@ -622,14 +600,8 @@ const InvoiceContentPreview = ({
         {wrapTextSimple(`Telp: ${branchPhone}`, 32) + '\n'}
         {'--------------------------------\n'}
 
-        {/* Customer Info */}
-        {wrapTextSimple(`Nama   : ${order.customer?.name || ''}`, 32) + '\n'}
-        {/* ✅ Poin Terkumpul: Tambahkan di bawah nama jika points enabled */}
-        {pointsEnabled && order.customer?.points != null && (() => {
-          const currentPoints = order.customer?.points != null ? Number(order.customer.points) : 0;
-          return wrapTextSimple(`Poin Terkumpul : ${formatNumber(currentPoints)}`, 32) + '\n';
-        })()}
-        {order.customer?.address ? wrapTextSimple(`Alamat : ${order.customer.address}`, 32) + '\n\n' : '\n'}
+        {/* Customer Info — walk-in tanpa identitas tetap tampil sebagai "Pelanggan Umum" */}
+        {wrapTextSimple(`Nama   : ${order.customer?.name || 'Pelanggan Umum'}`, 32) + '\n\n'}
         {wrapTextSimple(`No.Inv : ${order.payment?.code || ''}`, 32) + '\n'}
         {wrapTextSimple(`Tgl    : ${formattedDate}`, 32) + '\n'}
         {'--------------------------------\n'}
@@ -638,11 +610,8 @@ const InvoiceContentPreview = ({
         {orderDetailsLines.map((detail, i) => {
           // Wrap treatment name jika terlalu panjang
           let line = wrapTextSimple(detail.line1, 32) + '\n';
-          if (detail.reason) {
-            line += wrapTextSimple(detail.reason, 32) + '\n';
-          }
-          
-          // Tambahkan detail items jika ada
+
+          // Tambahkan keterangan / permintaan khusus jika ada
           if (detail.items) {
             line += wrapTextSimple(detail.items, 32) + '\n';
           }
@@ -673,14 +642,8 @@ const InvoiceContentPreview = ({
           return line;
         }).join('')}
 
-        {/* Payment Summary */}
+        {/* Payment Summary — Potongan Poin disembunyikan */}
         {'\n' + rightAlign('Sub Total', formatNumber(totalAll)) + '\n'}
-        {/* ✅ FIX: Pisahkan potongan: Points Discount dulu, lalu Membership Discount, lalu Payment Discount */}
-        {/* Urutan: Points > Membership > Payment Discount (sesuai prioritas) */}
-        {pointsDiscountAmount > 0 && (() => {
-          const discountLine = rightAlign('Potongan Poin', `(${formatNumber(pointsDiscountAmount)})`);
-          return (discountLine.length > 32 ? wrapTextSimple(discountLine, 32) : discountLine) + '\n';
-        })()}
         {membershipDiscountAmount > 0 && (() => {
           const discountLine = rightAlign('Potongan Membership', `(${formatNumber(membershipDiscountAmount)})`);
           return (discountLine.length > 32 ? wrapTextSimple(discountLine, 32) : discountLine) + '\n';
@@ -757,69 +720,6 @@ const InvoiceContentPreview = ({
           return (statusLine.length > 32 ? wrapTextSimple(statusLine, 32) : statusLine) + '\n';
         })()}
         {'================================\n'}
-
-        {/* REWARD POIN Section - Only show if points enabled in tenant settings */}
-        {pointsEnabled && (() => {
-          // Use earn_rate from state (fetched from tenant settings)
-          
-          // Calculate points based on payment status
-          const paymentStatusForPoints = order.payment?.status || 'unpaid';
-          const paidAmount = totalPaid || 0;
-          const finalPrice = finalTotal || 0;
-          
-          // Calculate points: HANYA PAID = Poin Didapat, DP/UNPAID = Poin Menunggu
-          let pointsEarned = 0;
-          let pointsLabel = '';
-          if (paymentStatusForPoints === 'paid' && paidAmount > 0) {
-            pointsEarned = Math.floor(paidAmount / earnRate);
-            pointsLabel = 'Poin Didapat';
-          } else if (paymentStatusForPoints === 'dp' || paymentStatusForPoints === 'unpaid') {
-            // Status DP atau UNPAID: poin masih menunggu (dari final_price)
-            pointsEarned = Math.floor(finalPrice / earnRate);
-            pointsLabel = 'Poin Menunggu';
-          }
-          
-          // Get customer points data
-          const currentPoints = order.customer?.points != null ? Number(order.customer.points) : 0;
-          const membershipName = order.customer?.current_membership?.membership?.name || null;
-          
-          // Show section only if points enabled
-          let pointsSection = '\n';
-          pointsSection += centerAlign('*** REWARD POIN ***', 32) + '\n';
-          
-          // Poin Tambahan / Poin Menunggu
-          if (pointsEarned > 0) {
-            const pointsLine = rightAlign(pointsLabel, `+${formatNumber(pointsEarned)}`);
-            pointsSection += (pointsLine.length > 32 ? wrapTextSimple(pointsLine, 32) : pointsLine) + '\n';
-          }
-          
-          // Bonus Order Pertama (tampil jika ada PointTransaction)
-          // ✅ FIX: Cek dari bonusPoints.firstOrder (jika > 0, berarti ada PointTransaction dengan first order bonus)
-          if (bonusPoints.firstOrder > 0) {
-            const firstOrderLine = rightAlign('Bonus Order Pertama', `+${formatNumber(bonusPoints.firstOrder)}`);
-            pointsSection += (firstOrderLine.length > 32 ? wrapTextSimple(firstOrderLine, 32) : firstOrderLine) + '\n';
-          }
-          
-          // Bonus Referral (hanya tampil jika ada)
-          if (bonusPoints.referral > 0) {
-            const referralLine = rightAlign('Bonus Referral', `+${formatNumber(bonusPoints.referral)}`);
-            pointsSection += (referralLine.length > 32 ? wrapTextSimple(referralLine, 32) : referralLine) + '\n';
-          }
-          
-          // ✅ REMOVED: Poin Saat Ini dipindahkan ke header sebagai "Poin Terkumpul"
-          
-          // Membership (if exists)
-          if (membershipName) {
-            pointsSection += `Membership: ${membershipName}\n`;
-          }
-          
-          // Add promotional text
-          pointsSection += '\n';
-          pointsSection += centerAlign('(Tukar poin kamu jadi diskon!)', 32) + '\n';
-          pointsSection += '================================\n';
-          
-          return pointsSection;
-        })()}
 
         {/* Footer */}
         {'\n' + centerAlign('*** TERIMA KASIH ***', 32) + '\n'}

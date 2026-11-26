@@ -1,4 +1,5 @@
 // Template Invoice Thermal Printer - Modular
+import dayjs from 'dayjs';
 import { formatPaymentMethod } from '../utils/labelFormatter';
 
 // Helper
@@ -62,60 +63,29 @@ function safeNumber(val) {
   return isNaN(n) ? 0 : n;
 }
 
-// Helper: Format item details untuk invoice
-function formatItemDetails(items, maxLength = 30, indent = 2) {
-  if (!items || !Array.isArray(items) || items.length === 0) {
-    return '';
-  }
+// Keterangan / request khusus per item (dedupe, tanpa tag antrian)
+function collectItemNotes(group) {
+  const notes = [];
+  const push = (value) => {
+    const note = String(value || '').trim();
+    if (!note || note === '-') return;
+    if (notes.some((existing) => existing.toLowerCase() === note.toLowerCase())) return;
+    notes.push(note);
+  };
 
-  let result = '';
-  const indentStr = ' '.repeat(indent);
-  const notesIndent = ' '.repeat(indent + 2); // Indent lebih dalam untuk notes
+  if (group.custom_price_reason) push(group.custom_price_reason);
 
-  items.forEach((item, index) => {
-    // Get item data (support both item.item and direct item structure)
-    const itemName = item.item?.name || item.name || '';
-    const itemBrand = item.item?.brand || item.brand || '';
-    const itemNotes = item.notes || '';
-
-    // Skip jika tidak ada data sama sekali
-    if (!itemName && !itemBrand) {
-      return;
-    }
-
-    // ✅ Nomor antrian tag (reset harian per cabang) — biar pelanggan langsung tahu
-    const tagNumber = item.tag_number != null
-      ? item.tag_number
-      : (item.item?.tag_number != null ? item.item.tag_number : null);
-
-    // Build item text: [#N] [brand] [nama item]
-    let itemText = '';
-    if (itemBrand) {
-      itemText = `${itemBrand} ${itemName}`;
-    } else {
-      itemText = itemName;
-    }
-
-    if (tagNumber != null) {
-      itemText = `#${tagNumber} ${itemText}`;
-    }
-
-    // Wrap text dan tambahkan indent
-    const wrappedText = wrapText(itemText, maxLength, indent);
-    result += wrappedText + '\n';
-
-    // Tambahkan notes jika ada
-    // if (itemNotes && itemNotes.trim()) {
-    //   const notesText = `Catatan: ${itemNotes.trim()}`;
-    //   const wrappedNotes = wrapText(notesText, maxLength, indent + 2);
-    //   result += wrappedNotes + '\n';
-    // }
+  const items = Array.isArray(group.items) ? group.items : [];
+  items.forEach((item) => {
+    push(item?.description);
+    push(item?.notes);
+    push(item?.note);
   });
 
-  return result;
+  return notes;
 }
 
-function generateHeaderInvoice(dataOrder, tenantInfo = null, branchInfo = null, printerSettings = null, pointsEnabled = false, currentPoints = 0) {
+function generateHeaderInvoice(dataOrder, tenantInfo = null, branchInfo = null, printerSettings = null) {
   const { customer, payment } = dataOrder;
 
   // Dynamic values dengan fallback yang lebih baik
@@ -155,29 +125,15 @@ function generateHeaderInvoice(dataOrder, tenantInfo = null, branchInfo = null, 
   }
   header += `--------------------------------\n`;
 
-  // Customer info (wrapped)
-  header += `Nama   : ${customer?.name || ''}\n`;
-
-  // ✅ Poin Terkumpul: Tambahkan di bawah nama jika points enabled
-  if (pointsEnabled && customer?.points != null) {
-    const pointsToDisplay = currentPoints > 0 ? currentPoints : (Number(customer.points) || 0);
-    header += `Poin Terkumpul : ${formatNumber(pointsToDisplay)}\n`;
-  }
-
-  if (customer?.address) {
-    // Wrap "Alamat : {address}" dengan max 32 karakter per line
-    const addressLine = `Alamat : ${customer.address}`;
-    header += wrapText(addressLine, 32) + '\n\n';
-  } else {
-    header += '\n';
-  }
+  // Customer info — walk-in tanpa identitas tetap tampil sebagai "Pelanggan Umum"
+  header += `Nama   : ${customer?.name || 'Pelanggan Umum'}\n\n`;
 
   header += `No.Inv : ${payment?.code || ''}\n`;
 
-  // Tanggal saja (no time)
-  const dateField = dataOrder.entry_date || dataOrder.createdAt || dataOrder.created_at || dataOrder.date || dataOrder.order_date;
+  // Tanggal + jam transaksi (dari createdAt order)
+  const dateField = dataOrder.createdAt || dataOrder.created_at || dataOrder.entry_date || dataOrder.date || dataOrder.order_date;
   const formattedDate = dateField
-    ? new Date(dateField).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: '2-digit' })
+    ? dayjs(dateField).format('DD/MM/YY HH:mm')
     : 'Tidak ada tanggal';
 
   header += `Tgl    : ${formattedDate}\n`;
@@ -299,18 +255,10 @@ export function generateOrderDetails(orderDetails) {
 
     result += `${treatmentName} x${qty}\n`;
 
-    // Tambahkan custom_price_reason jika ada
-    if (group.custom_price_reason) {
-      result += wrapText(`Ket: ${group.custom_price_reason}`, 30, 2) + '\n';
-    }
-
-    // Tambahkan detail items jika ada
-    if (group.items && Array.isArray(group.items) && group.items.length > 0) {
-      const itemsText = formatItemDetails(group.items, 30, 2);
-      if (itemsText) {
-        result += itemsText;
-      }
-    }
+    // Keterangan / request khusus
+    collectItemNotes(group).forEach((note) => {
+      result += wrapText(`Ket: ${note}`, 30, 2) + '\n';
+    });
 
     // Tampilkan discount jika ada (format compact agar tidak overflow)
     if (discount && discount.type && discountAmount > 0) {
@@ -420,15 +368,12 @@ function generatePaymentSummary(payment, subTotal) {
   // ✅ Payment Summary dengan urutan yang benar
   let summary = `\n${rightAlign('Sub Total', formatNumber(subTotal))}`;
 
-  // ✅ FIX: Pisahkan potongan: Payment Discount, Membership Discount, Points Discount
+  // ✅ FIX: Pisahkan potongan: Payment Discount, Membership Discount
   if (paymentDiscountAmount > 0) {
     summary += `\n${rightAlign('Potongan Diskon', `(${formatNumber(paymentDiscountAmount)})`)}`;
   }
   if (membershipDiscountAmount > 0) {
     summary += `\n${rightAlign('Potongan Membership', `(${formatNumber(membershipDiscountAmount)})`)}`;
-  }
-  if (pointsDiscountAmount > 0) {
-    summary += `\n${rightAlign('Potongan Poin', `(${formatNumber(pointsDiscountAmount)})`)}`;
   }
 
   // ✅ Tampilkan Total Akhir (dengan enter setelahnya)
@@ -497,72 +442,6 @@ function generatePaymentSummary(payment, subTotal) {
   return summary;
 }
 
-function generatePointsSection(orderData, payment, totalPaid, finalTotal, earnRate = 1000, bonusPoints = { firstOrder: 0, referral: 0 }, isFirstOrder = false, pointsEnabled = false) {
-  // earn_rate passed as parameter (default: 1000 = 1 poin per Rp 1.000)
-  // pointsEnabled: hanya generate section jika enabled = true
-
-  // Jika points tidak enabled, return empty string
-  if (!pointsEnabled) {
-    return '';
-  }
-
-  // Calculate points based on payment status
-  const paymentStatus = payment?.status || 'unpaid';
-  const paidAmount = totalPaid || 0;
-  const finalPrice = finalTotal || 0;
-
-  // Calculate points: HANYA PAID = Poin Didapat, DP/UNPAID = Poin Menunggu
-  let pointsEarned = 0;
-  let pointsLabel = '';
-  if (paymentStatus === 'paid' && paidAmount > 0) {
-    pointsEarned = Math.floor(paidAmount / earnRate);
-    pointsLabel = 'Poin Didapat';
-  } else if (paymentStatus === 'dp' || paymentStatus === 'unpaid') {
-    // Status DP atau UNPAID: poin masih menunggu (dari final_price)
-    pointsEarned = Math.floor(finalPrice / earnRate);
-    pointsLabel = 'Poin Menunggu';
-  }
-
-  // Get customer points data
-  const customer = orderData?.customer || null;
-  const currentPoints = customer?.points != null ? Number(customer.points) : 0;
-  const membershipName = customer?.current_membership?.membership?.name || null;
-
-  // Show section only if points enabled
-  let pointsSection = '\n';
-  pointsSection += centerAlign('*** REWARD POIN ***', 32) + '\n';
-
-  // Poin Tambahan / Poin Menunggu
-  if (pointsEarned > 0) {
-    pointsSection += `${rightAlign(pointsLabel, `+${formatNumber(pointsEarned)}`)}\n`;
-  }
-
-  // Bonus Order Pertama (tampil jika ada PointTransaction)
-  // ✅ FIX: Cek dari bonusPoints.firstOrder (jika > 0, berarti ada PointTransaction dengan first order bonus)
-  if (bonusPoints.firstOrder > 0) {
-    pointsSection += `${rightAlign('Bonus Order Pertama', `+${formatNumber(bonusPoints.firstOrder)}`)}\n`;
-  }
-
-  // Bonus Referral (hanya tampil jika ada)
-  if (bonusPoints.referral > 0) {
-    pointsSection += `${rightAlign('Bonus Referral', `+${formatNumber(bonusPoints.referral)}`)}\n`;
-  }
-
-  // ✅ REMOVED: Poin Saat Ini dipindahkan ke header sebagai "Poin Terkumpul"
-
-  // Membership (if exists)
-  if (membershipName) {
-    pointsSection += `Membership: ${membershipName}\n`;
-  }
-
-  // Add promotional text
-  pointsSection += '\n';
-  pointsSection += centerAlign('(Tukar poin kamu jadi diskon!)', 32) + '\n';
-  pointsSection += '================================\n';
-
-  return pointsSection;
-}
-
 function generateFooterInvoice(tenantInfo = null, printerSettings = null, orderData = null) {
   // Gunakan custom_thank_you dari printer settings jika ada
   const footerText = printerSettings?.custom_thank_you ||
@@ -607,33 +486,14 @@ function generateFooterInvoice(tenantInfo = null, printerSettings = null, orderD
   return footer;
 }
 
-export function generateInvoiceContent(orderData, tenantInfo = null, branchInfo = null, printerSettings = null, earnRate = 1000, bonusPoints = { firstOrder: 0, referral: 0 }, isFirstOrder = false, pointsEnabled = false) {
+export function generateInvoiceContent(orderData, tenantInfo = null, branchInfo = null, printerSettings = null) {
   let content = '';
   const { details, totalAll } = generateOrderDetails(orderData.order_details);
 
-  // ✅ Get current points for header
-  const customer = orderData?.customer || null;
-  const currentPoints = customer?.points != null ? Number(customer.points) : 0;
-
-  content += generateHeaderInvoice(orderData, tenantInfo, branchInfo, printerSettings, pointsEnabled, currentPoints);
+  content += generateHeaderInvoice(orderData, tenantInfo, branchInfo, printerSettings);
   content += details;
   content += generatePaymentSummary(orderData.payment, totalAll);
-
-  // Calculate totalPaid and finalTotal for points section
-  let totalPaid = 0;
-  if (orderData.payment?.payment_details && orderData.payment.payment_details.length > 0) {
-    orderData.payment.payment_details.forEach(detail => {
-      totalPaid += safeNumber(detail.amount);
-    });
-  }
-  const finalTotal = orderData.payment?.final_price != null
-    ? safeNumber(orderData.payment.final_price)
-    : totalAll;
-
-  // Add points section before footer (only if points enabled)
-  content += generatePointsSection(orderData, orderData.payment, totalPaid, finalTotal, earnRate, bonusPoints, isFirstOrder, pointsEnabled);
   content += generateFooterInvoice(tenantInfo, printerSettings, orderData);
-  console.log('content', content);
   return content;
 }
 
