@@ -72,6 +72,20 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
+// === DEBUG double-submit: hitung setiap POST /orders yang meninggalkan browser ===
+let __postOrderSeq = 0;
+instance.interceptors.request.use((config) => {
+  if (config.method === 'post' && /\/orders\/?$/.test(config.url || '')) {
+    __postOrderSeq += 1;
+    config.__postOrderSeq = __postOrderSeq;
+    console.log(
+      `[axios POST /orders #${__postOrderSeq} ${new Date().toISOString().slice(11, 23)}] dikirim`,
+      { retried: Boolean(config._retry), url: config.url }
+    );
+  }
+  return config;
+});
+
 instance.interceptors.response.use(
   (response) => response,
   async (error) => {

@@ -212,10 +212,23 @@ export const deleteOrder = async (orderId) => {
 };
 
 // Create order
+// Counter POST /orders yang benar-benar keluar — untuk melacak double-submit.
+let __createOrderCallCount = 0;
+
 export const createOrder = async (orderData) => {
+  __createOrderCallCount += 1;
+  const callNo = __createOrderCallCount;
+  const stamp = `[createOrder #${callNo} ${new Date().toISOString().slice(11, 23)}]`;
+  console.log(`${stamp} MULAI request POST /orders`, {
+    table_number: orderData.table_number,
+    customer_name: orderData.customer_name,
+    items: orderData.order_details?.length,
+  });
+
   try {
     const userData = await getUserData();
-    
+    console.log(`${stamp} getUserData selesai, kirim POST sekarang`);
+
     // Add tenant_id and branch_id to orderData
     const dataWithTenant = {
       ...orderData,
@@ -224,9 +237,10 @@ export const createOrder = async (orderData) => {
     };
     
     const response = await instance.post(`/orders`, dataWithTenant);
+    console.log(`${stamp} BERHASIL → order id`, response.data?.data?.id);
     return response.data.data;
   } catch (error) {
-    console.error('Error creating order:', error);
+    console.error(`${stamp} GAGAL`, error?.response?.status, error?.response?.data || error?.message);
     throw error;
   }
 };

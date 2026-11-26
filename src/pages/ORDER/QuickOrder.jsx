@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback, useMemo} from 'react';
+import React, {useState, useEffect, useCallback, useMemo, useRef} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {Plus, Minus, X, Search, User, Calendar, DollarSign, QrCode, CreditCard, AlertCircle, AlertTriangle, ArrowLeft, Info, Coins, Utensils, MessageSquare} from 'lucide-react';
 import QuickOrderCustomerSelect, {isWalkInCustomer} from '../../components/QuickInput/QuickOrderCustomerSelect';
@@ -104,6 +104,13 @@ const QuickOrder = () => {
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [printOrderData, setPrintOrderData] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Guard sinkron: state React belum tentu ter-update saat double-click,
+  // jadi pakai ref supaya submit kedua langsung ditolak.
+  const submitLockRef = useRef(false);
+  // === DEBUG double-submit ===
+  const renderCountRef = useRef(0);
+  const clickCountRef = useRef(0);
+  renderCountRef.current += 1;
   const [submitError, setSubmitError] = useState('');
   const [orderLimit, setOrderLimit] = useState(null);
   const [referralCheckResult, setReferralCheckResult] = useState(null); // { found: boolean, customer: null | object, loading: boolean }
@@ -457,7 +464,19 @@ const QuickOrder = () => {
 
   // Submit order
   const handleSubmit = async () => {
-    if (isSubmitting) return;
+    // === DEBUG double-submit ===
+    const tag = `[TambahPesanan ${new Date().toISOString().slice(11, 23)}]`;
+    console.log(`${tag} 1. handler dipanggil`, {
+      lock: submitLockRef.current,
+      isSubmitting,
+      itemCount: orderData.order_details.length,
+      renderCount: renderCountRef.current,
+    });
+    if (submitLockRef.current || isSubmitting) {
+      console.warn(`${tag} DIBLOKIR oleh guard (lock=${submitLockRef.current}, isSubmitting=${isSubmitting})`);
+      return;
+    }
+    console.log(`${tag} 2. lolos guard, kunci diambil`);
     setSubmitError('');
     const activeCustomer = orderData.customer || guestCustomer;
     if (!activeCustomer || orderData.order_details.length === 0) {
@@ -491,19 +510,22 @@ const QuickOrder = () => {
       return;
     }
 
-    // Check order limit before submit
-    try {
-      const limitResponse = await instance.get('/subscriptions/check-order-limit');
-      if (limitResponse.data.success && !limitResponse.data.data.canCreate) {
-        alert(`Batas maksimal order per bulan telah tercapai (${limitResponse.data.data.current}/${limitResponse.data.data.max}). Silakan upgrade paket untuk menambah order.`);
-        return;
-      }
-    } catch (error) {
-      console.error('Error checking order limit:', error);
-    }
-
+    // Kunci dikunci SEBELUM await pertama, supaya klik beruntun tidak lolos.
+    submitLockRef.current = true;
     setIsSubmitting(true);
+    console.log(`${tag} 3. validasi lokal lolos, mulai cek order limit`);
     try {
+      // Check order limit before submit
+      try {
+        const limitResponse = await instance.get('/subscriptions/check-order-limit');
+        console.log(`${tag} 4. order limit selesai`, limitResponse?.data?.data);
+        if (limitResponse.data.success && !limitResponse.data.data.canCreate) {
+          alert(`Batas maksimal order per bulan telah tercapai (${limitResponse.data.data.current}/${limitResponse.data.data.max}). Silakan upgrade paket untuk menambah order.`);
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking order limit:', error);
+      }
       // ✅ Invalidate cache untuk memastikan data fresh
       console.log('🔄 Invalidating cache before getting fresh shift data...');
       invalidateUserProfileCache();
@@ -774,7 +796,14 @@ const QuickOrder = () => {
       };
 
       // Call API
+      console.log(`${tag} 5. KIRIM POST /orders`, {
+        items: apiPayload.order_details?.length,
+        table_number: apiPayload.table_number,
+        customer_name: apiPayload.customer_name,
+      });
+      const sentAt = Date.now();
       const result = await createOrder(apiPayload);
+      console.log(`${tag} 6. POST /orders SELESAI (${Date.now() - sentAt}ms) → order id`, result?.id);
 
       // Refresh order limit after successful creation
       try {
@@ -805,9 +834,11 @@ const QuickOrder = () => {
       setReferralCheckResult(null);
 
     } catch (error) {
-      console.error('[ERROR] QuickOrder - Failed to create order:', error);
+      console.error(`${tag} GAGAL saat create order:`, error?.response?.data || error?.message || error);
       setSubmitError(getApiErrorMessage(error));
     } finally {
+      console.log(`${tag} 7. selesai, kunci dilepas`);
+      submitLockRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -1385,7 +1416,14 @@ const QuickOrder = () => {
               {step === steps.length - 1 && (
                 <AnimatedButton
                   variant="green"
-                  onClick={handleSubmit}
+                  onClick={() => {
+                    clickCountRef.current += 1;
+                    console.log(
+                      `[TambahPesanan ${new Date().toISOString().slice(11, 23)}] 0. TOMBOL DIKLIK ke-${clickCountRef.current}`,
+                      { renderCount: renderCountRef.current, disabled: orderData.order_details.length === 0 || isSubmitting }
+                    );
+                    handleSubmit();
+                  }}
                   disabled={orderData.order_details.length === 0 || isSubmitting}
                   className="flex-1 py-3"
                 >
