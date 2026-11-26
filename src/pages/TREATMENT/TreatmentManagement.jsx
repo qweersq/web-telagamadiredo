@@ -5,6 +5,7 @@ import AnimatedButton from '../../components/Design/AnimatedButton';
 import instance from '../../config/api';
 import {FaEdit, FaToggleOn, FaToggleOff, FaPlus, FaSearch} from 'react-icons/fa';
 import {Ticket, Package, Boxes, Check} from 'lucide-react';
+import {getUserProfile} from '../../utils/userProfileHelper';
 import {stockService} from '../../services/stockService';
 import {branchService} from '../../services/branchService';
 const TreatmentManagement = () => {
@@ -84,6 +85,22 @@ const TreatmentManagement = () => {
     hasNextPage: false,
     hasPrevPage: false
   });
+
+  useEffect(() => {
+    // Ambil tenant_id dari profil user
+    const loadTenantId = async () => {
+      try {
+        const profile = await getUserProfile();
+        if (profile?.tenant?.id) {
+          setTenantId(profile.tenant.id);
+        }
+      } catch (error) {
+        console.error('❌ TreatmentManagement - Failed to load tenant ID:', error);
+      }
+    };
+
+    loadTenantId();
+  }, []);
 
   useEffect(() => {
     if (tenantId) {

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import AnimatedButton from '../../../components/Design/AnimatedButton';
 import {useShift} from '../../../contexts/ShiftContext';
 import instance from '../../../config/api';
@@ -103,6 +103,14 @@ const OpenShiftModal = ({ open, onClose }) => {
       setLoadingShiftDetail(false);
     }
   };
+
+  // Muat data profil/shift dan daftar akun kas setiap kali modal dibuka
+  useEffect(() => {
+    if (open) {
+      fetchProfileAndShift();
+      fetchCashAccounts();
+    }
+  }, [open]);
 
   if (!open) return null;
 

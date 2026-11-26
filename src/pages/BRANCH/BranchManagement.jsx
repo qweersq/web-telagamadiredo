@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {ArrowLeft, Plus, Search, Edit, Trash2, MapPin, Users, Navigation, Wifi, WifiOff, Info, Building2, Store, RefreshCw, Phone, Utensils, Ticket, Layers} from 'lucide-react';
 import HeaderBerandaOwner from '../../components/Com Header/HeaderBerandaOwner';
@@ -59,6 +59,27 @@ const BranchManagement = () => {
   const [mitraLoading, setMitraLoading] = useState(false);
   const [showAddMitraModal, setShowAddMitraModal] = useState(false);
   const [selectedMitraToAdd, setSelectedMitraToAdd] = useState('');
+
+  useEffect(() => {
+    const loadTenantId = async () => {
+      try {
+        const profile = await getUserProfile();
+        if (profile?.tenant?.id) {
+          setFormData(prev => ({ ...prev, tenant_id: profile.tenant.id }));
+        }
+
+        // ✅ Load subscription data for validation
+        if (profile && profile.subscription) {
+          setSubscriptionData(profile.subscription);
+        }
+      } catch (error) {
+        console.error('❌ BranchManagement - Failed to load tenant ID:', error);
+      }
+    };
+
+    fetchBranches();
+    loadTenantId();
+  }, []);
 
   const fetchBranches = async () => {
     try {

@@ -51,6 +51,10 @@ const TemplateManagement = () => {
     }
   }, [tenantId]);
 
+  useEffect(() => {
+    initializeData();
+  }, []);
+
   // API Functions
   const getUserData = async () => {
     try {

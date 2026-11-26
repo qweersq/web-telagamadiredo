@@ -4,6 +4,7 @@ import HeaderBerandaOwner from '../../components/Com Header/HeaderBerandaOwner';
 import AnimatedButton from '../../components/Design/AnimatedButton';
 import {searchItems} from '../ORDER/api/orderApi';
 import instance from '../../config/api';
+import {getUserProfile} from '../../utils/userProfileHelper';
 import {FaEdit, FaToggleOn, FaToggleOff, FaPlus, FaSearch} from 'react-icons/fa';
 
 const ItemManagement = ({ isFromAdmin = false }) => {
@@ -51,6 +52,22 @@ const ItemManagement = ({ isFromAdmin = false }) => {
     hasNextPage: false,
     hasPrevPage: false
   });
+
+  useEffect(() => {
+    // Ambil tenant_id dari profil user
+    const loadTenantId = async () => {
+      try {
+        const profile = await getUserProfile();
+        if (profile?.tenant?.id) {
+          setTenantId(profile.tenant.id);
+        }
+      } catch (error) {
+        console.error('❌ ItemManagement - Failed to load tenant ID:', error);
+      }
+    };
+
+    loadTenantId();
+  }, []);
 
   useEffect(() => {
     if (tenantId) {

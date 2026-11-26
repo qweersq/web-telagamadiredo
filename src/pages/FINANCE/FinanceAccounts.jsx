@@ -51,6 +51,10 @@ const FinanceAccounts = () => {
   const [displayBalance, setDisplayBalance] = useState('');
 
   useEffect(() => {
+    loadUserData();
+  }, []);
+
+  useEffect(() => {
     if (userData) {
       fetchBranches(); // Fetch branches first
       fetchAllAccounts(); // Fetch all accounts for counter

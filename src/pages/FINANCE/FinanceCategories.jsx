@@ -38,6 +38,10 @@ const FinanceCategories = () => {
   ];
 
   useEffect(() => {
+    loadUserData();
+  }, []);
+
+  useEffect(() => {
     if (userData) {
       fetchCategories();
     }

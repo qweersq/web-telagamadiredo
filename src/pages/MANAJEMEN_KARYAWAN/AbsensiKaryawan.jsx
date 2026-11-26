@@ -2,9 +2,9 @@ import {useState, useEffect} from 'react';
 import {useNavigate} from 'react-router-dom';
 import HeaderBerandaOwner from '../../components/Com Header/HeaderBerandaOwner';
 import instance from '../../config/api';
+import {getUserProfile} from '../../utils/userProfileHelper';
 import {getRoleLabel} from '../../utils/roleValidator';
 import {FaClock, FaCheckCircle, FaMapMarkerAlt, FaExclamationTriangle, FaCalendarAlt, FaUserClock, FaEdit, FaTrash, FaFilter, FaTimes} from 'react-icons/fa';
-import {Info} from 'lucide-react';
 
 const AbsensiKaryawan = () => {
   const navigate = useNavigate();
@@ -31,6 +31,24 @@ const AbsensiKaryawan = () => {
     status: '',
     notes: ''
   });
+
+  useEffect(() => {
+    // Ambil role, tenant_id, dan data user dari profil
+    const loadUserData = async () => {
+      try {
+        const profile = await getUserProfile();
+        setUserRole(profile?.user?.role || '');
+        setTenantId(profile?.tenant?.id || '');
+        setUserData(profile);
+      } catch (error) {
+        console.error('❌ AbsensiKaryawan - Failed to load user data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserData();
+  }, []);
 
   useEffect(() => {
     if (tenantId && userData) {

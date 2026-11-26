@@ -51,6 +51,10 @@ const ShiftManagement = () => {
   });
 
   useEffect(() => {
+    fetchBranches();
+  }, []);
+
+  useEffect(() => {
     if (selectedBranchId) {
       fetchShifts(1, true);
     }
