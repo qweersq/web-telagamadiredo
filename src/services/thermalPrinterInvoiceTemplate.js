@@ -137,6 +137,7 @@ function generateHeaderInvoice(dataOrder, tenantInfo = null, branchInfo = null, 
     : 'Tidak ada tanggal';
 
   header += `Tgl    : ${formattedDate}\n`;
+  header += `Kasir  : ${dataOrder.creator?.name || '-'}\n`;
   header += `--------------------------------\n`;
 
   return header;

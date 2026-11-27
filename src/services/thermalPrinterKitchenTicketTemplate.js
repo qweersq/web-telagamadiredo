@@ -77,6 +77,7 @@ export function buildKitchenTickets(orderData) {
           order_type: orderData.order_type || null,
           table_number: orderData.table_number || null,
           customer_name: orderData.customer?.name || null,
+          cashier_name: orderData.creator?.name || null,
           selling_branch_name: orderData.branch?.name || null,
           customer_note: orderData.customer_note || null,
           entry_date: orderData.entry_date || null,
@@ -152,7 +153,6 @@ export function generateKitchenTicket(ticket, index, total) {
     .join('\n\n');
 
   const printedAt = dayjs().format('DD-MMM-YYYY HH:mm');
-  const entryDate = ticket.entry_date ? dayjs(ticket.entry_date).format('DD-MMM-YYYY') : '-';
 
   return `
 --------------------------------
@@ -160,7 +160,7 @@ ${queueLine}${ticket.production_branch_name || 'DAPUR'} (${index + 1}/${total})
 --------------------------------
 No. Nota  : ${ticket.order_code || '-'}
 Tanggal   : ${printedAt}
-Order     : ${entryDate}
+Kasir     : ${ticket.cashier_name || '-'}
 Tipe      : ${ticket.order_type || '-'}
 ${ticket.table_number ? `Meja      : ${ticket.table_number}\n` : ''}Tamu      : ${ticket.customer_name || '-'}
 ${ticket.selling_branch_name && ticket.selling_branch_name !== ticket.production_branch_name

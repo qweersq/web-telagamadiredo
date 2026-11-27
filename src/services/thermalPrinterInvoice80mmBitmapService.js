@@ -81,11 +81,11 @@ function fixAlignmentFor80mm(content) {
     }
     
     // Reset address section if we hit next field
-    if (trimmed.startsWith('No.Inv') || trimmed.startsWith('Tgl')) {
+    if (trimmed.startsWith('No.Inv') || trimmed.startsWith('Tgl') || trimmed.startsWith('Kasir')) {
       isInAddressSection = false;
     }
     
-    // LEFT ALIGN: Nama, No.Inv, Tgl
+    // LEFT ALIGN: Nama, No.Inv, Tgl, Kasir
     if (
       trimmed.startsWith('Nama') ||
       trimmed.startsWith('No.Inv :') ||
@@ -93,7 +93,10 @@ function fixAlignmentFor80mm(content) {
       trimmed.startsWith('No.Inv ') ||
       trimmed.startsWith('Tgl    :') ||
       trimmed.startsWith('Tgl:') ||
-      trimmed.startsWith('Tgl ')
+      trimmed.startsWith('Tgl ') ||
+      trimmed.startsWith('Kasir  :') ||
+      trimmed.startsWith('Kasir:') ||
+      trimmed.startsWith('Kasir ')
     ) {
       fixedLines.push(trimmed); // LEFT align - remove leading spaces
       continue;

@@ -31,6 +31,7 @@ const TreatmentManagement = () => {
     name: '',
     unit: '',
     price: '',
+    cost_price: '',
     type_item: DEFAULT_ITEM_TYPE,
     type_service: DEFAULT_SERVICE_TYPE,
     category_id: '',
@@ -67,6 +68,7 @@ const TreatmentManagement = () => {
   const [isCustomTypeService, setIsCustomTypeService] = useState(false);
   const [customTypeService, setCustomTypeService] = useState('');
   const [displayPrice, setDisplayPrice] = useState('');
+  const [displayCostPrice, setDisplayCostPrice] = useState('');
 
   // State untuk options dari API
   const [typeItemOptions, setTypeItemOptions] = useState([]);
@@ -309,7 +311,9 @@ const TreatmentManagement = () => {
         type_item: isProductMode ? formData.type_service : formData.type_item,
         type_service: formData.type_service || (isProductMode ? 'Makanan' : 'Wisata'),
         category_id: formData.category_id ? Number(formData.category_id) : null,
-        production_branch_id: formData.production_branch_id ? Number(formData.production_branch_id) : null
+        production_branch_id: formData.production_branch_id ? Number(formData.production_branch_id) : null,
+        // HPP opsional: kosong = belum diisi (null), 0 tetap dikirim sebagai 0
+        cost_price: formData.cost_price === '' ? null : Number(formData.cost_price)
       };
 
       const created = await instance.post('/treatments', payload);
@@ -374,7 +378,9 @@ const TreatmentManagement = () => {
         type_item: isProductMode ? formData.type_service : formData.type_item,
         type_service: formData.type_service || (isProductMode ? 'Makanan' : 'Wisata'),
         category_id: formData.category_id ? Number(formData.category_id) : null,
-        production_branch_id: formData.production_branch_id ? Number(formData.production_branch_id) : null
+        production_branch_id: formData.production_branch_id ? Number(formData.production_branch_id) : null,
+        // HPP opsional: kosong = belum diisi (null), 0 tetap dikirim sebagai 0
+        cost_price: formData.cost_price === '' ? null : Number(formData.cost_price)
       };
       await instance.put(`/treatments/${editingTreatment.id}`, payload);
       setShowEditModal(false);
@@ -496,6 +502,18 @@ const TreatmentManagement = () => {
         }
         break;
 
+      // HPP opsional: kosong = belum diisi, 0 tetap valid (mis. tiket tanpa bahan)
+      case 'cost_price': {
+        if (!trimmedValue) break;
+        const costValue = parseInt(trimmedValue, 10);
+        if (isNaN(costValue) || costValue < 0) {
+          error = 'HPP harus berupa angka 0 atau lebih';
+        } else if (costValue > 100000000) {
+          error = 'HPP maksimal Rp 100.000.000';
+        }
+        break;
+      }
+
       case 'description':
         if (trimmedValue && trimmedValue.length > 500) {
           error = 'Deskripsi maksimal 500 karakter';
@@ -525,7 +543,7 @@ const TreatmentManagement = () => {
     });
 
     // Validate optional fields
-    const optionalFields = ['description'];
+    const optionalFields = ['description', 'cost_price'];
     optionalFields.forEach(field => {
       const error = validateField(field, formData[field], formData);
       errors[field] = error;
@@ -575,6 +593,7 @@ const TreatmentManagement = () => {
       name: '',
       unit: '',
       price: '',
+      cost_price: '',
       type_item: DEFAULT_ITEM_TYPE,
       type_service: DEFAULT_SERVICE_TYPE,
       category_id: '',
@@ -593,6 +612,7 @@ const TreatmentManagement = () => {
     setIsFormValid(false);
     setIsSubmitting(false);
     setDisplayPrice('');
+    setDisplayCostPrice('');
     setIsCustomTypeItem(false);
     setCustomTypeItem('');
     setIsCustomTypeService(false);
@@ -615,6 +635,13 @@ const TreatmentManagement = () => {
     setEditingTreatment(treatment);
     const priceString = treatment.price.toString();
     const formattedPrice = parseInt(priceString, 10).toLocaleString('id-ID');
+    // HPP null/undefined = belum diisi, biarkan kosong supaya admin tahu harus diisi
+    const costPriceString = treatment.cost_price != null && treatment.cost_price !== ''
+      ? parseFloat(treatment.cost_price).toString()
+      : '';
+    const formattedCostPrice = costPriceString
+      ? parseInt(costPriceString, 10).toLocaleString('id-ID')
+      : '';
 
     // Produk = punya satuan atau kategorinya kategori barang
     const productCategories = ['Makanan', 'Minuman', 'Snack', 'Souvenir'];
@@ -626,6 +653,7 @@ const TreatmentManagement = () => {
       name: treatment.name || '',
       unit: treatment.unit || '',
       price: priceString,
+      cost_price: costPriceString,
       type_item: isProduct
         ? (treatment.type_item || DEFAULT_PRODUCT_SERVICE)
         : (treatment.type_item || DEFAULT_ITEM_TYPE),
@@ -638,6 +666,7 @@ const TreatmentManagement = () => {
     };
     setFormData(initialForm);
     setDisplayPrice(formattedPrice);
+    setDisplayCostPrice(formattedCostPrice);
     setItemKind(kind);
     setManageStock(false);
     setStockQty('0');
@@ -705,6 +734,20 @@ const TreatmentManagement = () => {
     } else {
       setDisplayPrice('');
       handleFieldChange('price', '');
+    }
+  };
+
+  // HPP: kosong diperbolehkan (belum diisi), 0 juga valid
+  const handleCostPriceChange = (value) => {
+    const cleanValue = value.replace(/\D/g, '');
+
+    if (cleanValue) {
+      const number = parseInt(cleanValue, 10);
+      setDisplayCostPrice(number.toLocaleString('id-ID'));
+      handleFieldChange('cost_price', cleanValue);
+    } else {
+      setDisplayCostPrice('');
+      handleFieldChange('cost_price', '');
     }
   };
 
@@ -1098,6 +1141,15 @@ const TreatmentManagement = () => {
                           <div className={`text-sm font-bold font-montserrat ${treatment.is_active ? 'text-telaga-700' : 'text-telaga-900/40'}`}>
                             {formatPrice(treatment.price)}
                           </div>
+                          {treatment.cost_price != null ? (
+                            <div className="mt-0.5 text-[10px] font-montserrat text-telaga-900/45">
+                              HPP {formatPrice(treatment.cost_price)}
+                            </div>
+                          ) : (
+                            <div className="mt-0.5 text-[10px] font-montserrat text-senja-500/80">
+                              HPP belum diisi
+                            </div>
+                          )}
                         </div>
 
                         {/* Aksi */}
@@ -1392,6 +1444,47 @@ const TreatmentManagement = () => {
                 </div>
                 {formErrors.price && (
                   <p className="mt-1 text-[11px] font-montserrat text-red-500">⚠️ {formErrors.price}</p>
+                )}
+              </div>
+
+              {/* 3a. HPP per unit — opsional, dipakai untuk hitung margin */}
+              <div>
+                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide font-montserrat text-telaga-700">
+                  HPP per Unit{' '}
+                  <span className="font-medium normal-case tracking-normal text-telaga-900/40">(opsional)</span>
+                </label>
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold font-montserrat text-telaga-400">
+                    Rp
+                  </span>
+                  <input
+                    type="text"
+                    value={displayCostPrice}
+                    onChange={(e) => handleCostPriceChange(e.target.value)}
+                    className={`w-full rounded-xl border py-2.5 pl-9 pr-3 text-sm font-montserrat text-telaga-900 transition-all focus:outline-none focus:ring-2 ${
+                      formErrors.cost_price
+                        ? 'border-red-300 focus:border-red-400 focus:ring-red-200'
+                        : 'border-telaga-100 bg-telaga-50/40 focus:border-telaga-400 focus:bg-white focus:ring-telaga-400/25'
+                    }`}
+                    placeholder="0"
+                    inputMode="numeric"
+                  />
+                </div>
+                {formErrors.cost_price ? (
+                  <p className="mt-1 text-[11px] font-montserrat text-red-500">⚠️ {formErrors.cost_price}</p>
+                ) : (
+                  <p className="mt-1 text-[11px] font-montserrat text-telaga-900/45">
+                    Biaya bahan utama per 1 unit. Isi 0 kalau tanpa bahan. Kosongkan kalau belum tahu.
+                  </p>
+                )}
+                {formData.cost_price !== '' && Number(formData.price) > 0 && (
+                  <p className="mt-1 text-[11px] font-montserrat text-telaga-900/60">
+                    Margin kotor:{' '}
+                    <span className="font-semibold text-telaga-800">
+                      {formatPrice(Number(formData.price) - Number(formData.cost_price))}
+                    </span>{' '}
+                    ({Math.round(((Number(formData.price) - Number(formData.cost_price)) / Number(formData.price)) * 100)}%)
+                  </p>
                 )}
               </div>
 

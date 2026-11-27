@@ -192,6 +192,7 @@ function generateHeaderInvoice80mm(dataOrder, tenantInfo = null, branchInfo = nu
     : 'Tidak ada tanggal';
   
   header += `Tgl    : ${formattedDate}\n`;
+  header += `Kasir  : ${dataOrder.creator?.name || '-'}\n`;
   header += `${SEPARATOR}\n`;
   
   return header;

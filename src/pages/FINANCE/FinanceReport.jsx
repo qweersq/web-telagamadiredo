@@ -600,7 +600,7 @@ const FinanceReport = () => {
           <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-500 font-montserrat">Untung/Rugi</p>
+                <p className="text-xs text-gray-500 font-montserrat">Arus Kas Bersih</p>
                 {loading ? (
                   <div className="animate-pulse">
                     <div className="h-6 bg-gray-200 rounded mb-1"></div>
@@ -608,11 +608,11 @@ const FinanceReport = () => {
                   </div>
                 ) : (
                   <>
-                    <p className="text-lg font-bold text-blue-600 font-montserrat">
+                    <p className={`text-lg font-bold font-montserrat ${(reportData.summary?.net_balance || 0) < 0 ? 'text-red-600' : 'text-blue-600'}`}>
                       {formatCurrency(reportData.summary?.net_balance || 0)}
                     </p>
                     <p className="text-xs text-gray-500 font-montserrat">
-                      Keuntungan bulan ini
+                      Uang masuk − uang keluar
                     </p>
                   </>
                 )}
@@ -649,6 +649,156 @@ const FinanceReport = () => {
             </div>
           </div>
         </div>
+
+        {/* Laporan Laba Rugi (HPP & Margin) */}
+        <div className="bg-white rounded-lg border border-gray-200 mb-6 overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50">
+            <BarChart3 className="w-5 h-5 text-gray-600" />
+            <h3 className="text-lg font-bold text-gray-800 font-montserrat tracking-wider">
+              Laba Rugi &amp; HPP
+            </h3>
+            <span className="ml-auto text-xs text-gray-500 font-montserrat">
+              {reportData.period?.month_name} {reportData.period?.year}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200">
+            {/* Kolom kiri: margin produk */}
+            <div className="p-4">
+              <p className="text-xs font-semibold text-gray-500 font-montserrat uppercase tracking-wider mb-3">
+                Laba Kotor (Margin Produk)
+              </p>
+
+              <div className="flex items-center justify-between py-2">
+                <span className="text-sm text-gray-700 font-montserrat">Omzet Penjualan Item</span>
+                <span className="text-sm font-semibold text-gray-800 font-montserrat">
+                  {formatCurrency(reportData.summary?.sales_revenue || 0)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between py-2">
+                <span className="text-sm text-gray-700 font-montserrat">HPP (Harga Pokok)</span>
+                <span className="text-sm font-semibold text-red-600 font-montserrat">
+                  − {formatCurrency(reportData.summary?.hpp_total || 0)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between py-3 mt-1 border-t-2 border-gray-300">
+                <span className="text-sm font-bold text-gray-800 font-montserrat">Laba Kotor</span>
+                <div className="text-right">
+                  <p className={`text-base font-bold font-montserrat ${(reportData.summary?.gross_profit || 0) < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {formatCurrency(reportData.summary?.gross_profit || 0)}
+                  </p>
+                  <p className="text-xs text-gray-500 font-montserrat">
+                    Margin {formatPercentage(reportData.summary?.gross_margin_percent || 0)}
+                  </p>
+                </div>
+              </div>
+
+              <p className="mt-2 text-xs text-gray-500 font-montserrat">
+                {reportData.hpp_breakdown?.total_items || 0} item terjual
+                {reportData.hpp_breakdown?.items_without_hpp > 0 && (
+                  <> · {reportData.hpp_breakdown.items_without_hpp} item dibuat sebelum HPP diisi</>
+                )}
+              </p>
+            </div>
+
+            {/* Kolom kanan: arus kas */}
+            <div className="p-4">
+              <p className="text-xs font-semibold text-gray-500 font-montserrat uppercase tracking-wider mb-3">
+                Arus Kas (Realisasi)
+              </p>
+
+              <div className="flex items-center justify-between py-2">
+                <span className="text-sm text-gray-700 font-montserrat">Uang Masuk</span>
+                <span className="text-sm font-semibold text-green-600 font-montserrat">
+                  {formatCurrency(reportData.summary?.total_income || 0)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between py-2">
+                <span className="text-sm text-gray-700 font-montserrat">Uang Keluar (Beban Operasional)</span>
+                <span className="text-sm font-semibold text-red-600 font-montserrat">
+                  − {formatCurrency(reportData.summary?.total_expense || 0)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between py-3 mt-1 border-t-2 border-gray-300">
+                <span className="text-sm font-bold text-gray-800 font-montserrat">Arus Kas Bersih</span>
+                <p className={`text-base font-bold font-montserrat ${(reportData.summary?.net_balance || 0) < 0 ? 'text-red-600' : 'text-blue-600'}`}>
+                  {formatCurrency(reportData.summary?.net_balance || 0)}
+                </p>
+              </div>
+
+              <div className="mt-2 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded p-2">
+                <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-800 font-montserrat leading-relaxed">
+                  HPP hanya untuk analisa margin per produk. Pembelian bahan sudah
+                  tercatat di Uang Keluar, jadi HPP tidak dikurangkan lagi dari Arus Kas Bersih.
+                </p>
+              </div>
+
+              {reportData.summary?.hpp_is_estimated && (
+                <div className="mt-2 flex items-start gap-2 bg-red-50 border border-red-200 rounded p-2">
+                  <Info className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-red-800 font-montserrat leading-relaxed">
+                    Sebagian produk belum punya HPP, jadi Laba Kotor di atas <b>lebih tinggi</b> dari seharusnya.
+                    Isi HPP di menu Manajemen Produk.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* HPP per Produk */}
+        {(reportData.hpp_breakdown?.by_product?.length || 0) > 0 && (
+          <div className="bg-white rounded-lg border border-gray-200 mb-6 overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50">
+              <Wallet className="w-5 h-5 text-gray-600" />
+              <h3 className="text-lg font-bold text-gray-800 font-montserrat tracking-wider">
+                HPP per Produk
+              </h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm font-montserrat">
+                <thead>
+                  <tr className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider">
+                    <th className="text-left px-4 py-2">Produk</th>
+                    <th className="text-right px-4 py-2">Qty</th>
+                    <th className="text-right px-4 py-2">Omzet</th>
+                    <th className="text-right px-4 py-2">HPP</th>
+                    <th className="text-right px-4 py-2">Laba Kotor</th>
+                    <th className="text-right px-4 py-2">Margin</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {reportData.hpp_breakdown.by_product.map((item) => (
+                    <tr key={item.treatment_id} className="hover:bg-gray-50">
+                      <td className="px-4 py-2 text-gray-800">
+                        {item.treatment_name}
+                        {item.items_without_hpp > 0 && (
+                          <span className="ml-2 text-xs text-red-600">
+                            ({item.items_without_hpp} dari {item.qty} item tanpa HPP)
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2 text-right text-gray-600">{item.qty}</td>
+                      <td className="px-4 py-2 text-right text-gray-800">{formatCurrency(item.revenue || 0)}</td>
+                      <td className="px-4 py-2 text-right text-red-600">{formatCurrency(item.hpp || 0)}</td>
+                      <td className={`px-4 py-2 text-right font-semibold ${item.gross_profit < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        {formatCurrency(item.gross_profit || 0)}
+                      </td>
+                      <td className="px-4 py-2 text-right text-gray-600">
+                        {formatPercentage(item.gross_margin_percent || 0)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Category Breakdown */}
