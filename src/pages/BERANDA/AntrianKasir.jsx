@@ -14,6 +14,9 @@ import QCHistoryModal from "../../components/Modal/QCHistoryModal";
 import { getUserProfile } from "../../utils/userProfileHelper";
 import { saveFilterToStorage, getFilterFromStorage, clearFilterFromStorage, FILTER_TYPES, COMPONENT_NAMES } from "../../utils/filterStorage";
 import { formatOrderDetailStatus } from "../../utils/labelFormatter";
+import useOrderAlert from "../../hooks/useOrderAlert";
+import OrderSoundToggle from "../../components/Notification/OrderSoundToggle";
+import OrderAlertStack from "../../components/Notification/OrderAlertStack";
 
 const AntrianKasir = () => {
   const { treatment } = useParams();
@@ -249,6 +252,16 @@ const AntrianKasir = () => {
   }, [searchQuery]);
 
 
+  // Notifikasi realtime pesanan masuk (bel + kartu ringkasan).
+  const { connected: notifConnected, toasts, dismissToast } = useOrderAlert({
+    enabled: Boolean(dateRange?.startDate && dateRange?.endDate),
+    onRefresh: () => {
+      setCurrentPage(1);
+      setHasNextPage(false);
+      fetchAntrianData();
+    },
+  });
+
   const getThumbnailUrl = (originalUrl) => {
     // Jika menggunakan Cloudinary
     if (originalUrl.includes("cloudinary")) {
@@ -461,14 +474,23 @@ const AntrianKasir = () => {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           rightAction={
-            <button
-              onClick={() => setShowHistoryModal(true)}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-[#EFF6FF] border border-[#BFDBFE] text-[11px] font-semibold text-[#2563EB] hover:bg-blue-100 transition-colors"
-              title="Riwayat QC"
-            >
-              <History className="w-3.5 h-3.5" />
-              Riwayat
-            </button>
+            <div className="flex items-center gap-1.5">
+              {notifConnected && (
+                <span
+                  className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500"
+                  title="Notifikasi realtime aktif"
+                />
+              )}
+              <OrderSoundToggle />
+              <button
+                onClick={() => setShowHistoryModal(true)}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-[#EFF6FF] border border-[#BFDBFE] text-[11px] font-semibold text-[#2563EB] hover:bg-blue-100 transition-colors"
+                title="Riwayat QC"
+              >
+                <History className="w-3.5 h-3.5" />
+                Riwayat
+              </button>
+            </div>
           }
         />
       </header>
@@ -805,6 +827,8 @@ const AntrianKasir = () => {
           </div>
         </div>
       )}
+      {/* Notifikasi pesanan masuk (realtime) */}
+      <OrderAlertStack toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 };

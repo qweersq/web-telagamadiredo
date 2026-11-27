@@ -5,6 +5,9 @@ import Header from "../../components/Com Header/Header";
 import instance from "../../config/api";
 import { thermalPrinterService } from "../../services/thermalPrinterService";
 import { getBranchId, getUserProfile } from "../../utils/userProfileHelper";
+import useOrderAlert from "../../hooks/useOrderAlert";
+import OrderSoundToggle from "../../components/Notification/OrderSoundToggle";
+import OrderAlertStack from "../../components/Notification/OrderAlertStack";
 
 /**
  * Beranda Dapur — layar kerja untuk menyiapkan pesanan.
@@ -121,6 +124,12 @@ const BerandaDapur = () => {
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [branchId, fetchTickets]);
+
+  // Notifikasi realtime: bel + kartu pesanan masuk, lalu langsung segarkan daftar.
+  const { connected, toasts, dismissToast } = useOrderAlert({
+    enabled: Boolean(branchId),
+    onRefresh: () => fetchTickets(),
+  });
 
   // Flatten: satu baris = satu item (qty bisa > 1 dari detail yang digabung)
   const rows = useMemo(() => {
@@ -321,11 +330,13 @@ const BerandaDapur = () => {
                     <p className="text-[11px] text-telaga-900/50">
                       {dayjs().format("DD MMM YYYY")}
                       {lastUpdated ? ` · diperbarui ${dayjs(lastUpdated).format("HH:mm")}` : ""}
+                      {connected ? " · realtime" : ""}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
+                  <OrderSoundToggle />
                   <button
                     onClick={() => setShowAllDates((prev) => !prev)}
                     className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition-colors ${showAllDates ? "bg-telaga-700 text-white" : "bg-telaga-50 text-telaga-700 hover:bg-telaga-100"}`}
@@ -439,6 +450,12 @@ const BerandaDapur = () => {
           </div>
         </div>
       </main>
+
+      <OrderAlertStack
+        toasts={toasts}
+        onDismiss={dismissToast}
+        onSelect={() => setActiveTab("pending")}
+      />
     </div>
   );
 };

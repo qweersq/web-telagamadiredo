@@ -21,6 +21,9 @@ import {
 } from "../../utils/filterStorage";
 import { getPhotoUrl } from '../../utils/photoUrlHelper';
 import OperationPanelModal from '../../components/Modal/OperationPanelModal';
+import useOrderAlert from "../../hooks/useOrderAlert";
+import OrderSoundToggle from "../../components/Notification/OrderSoundToggle";
+import OrderAlertStack from "../../components/Notification/OrderAlertStack";
 
 const BerandaKasir = () => {
   const navigate = useNavigate();
@@ -587,6 +590,16 @@ const BerandaKasir = () => {
     } 
   };
 
+  // Notifikasi realtime pesanan masuk: bel + kartu ringkasan, lalu segarkan
+  // seluruh angka dashboard tanpa menunggu user reload.
+  const { connected: notifConnected, toasts, dismissToast } = useOrderAlert({
+    onRefresh: () => {
+      fetchAntrianCounts(dateRange);
+      fetchAdminCountsOnly(dateRange);
+      fetchPendingNotesCount();
+    },
+  });
+
   const getStatusColor = (status) => {
     const statusColors = {
       'not_yet': 'bg-senja-100 text-senja-800',
@@ -873,6 +886,15 @@ const BerandaKasir = () => {
 
             {/* Action Menu */}
             <div className="mb-6">
+              <div className="mb-3 flex items-center justify-end gap-2">
+                {notifConnected && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-600">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                    realtime
+                  </span>
+                )}
+                <OrderSoundToggle />
+              </div>
               <div className="grid grid-cols-3 gap-3">
                 <AnimatedButton
                   onClick={() => navigate('/orders', { state: { from: '/berandakasir' } })}
@@ -1835,6 +1857,12 @@ Buka shift sekarang?"
             setShowItemDoneTemplateModal(false);
           }
         }}
+      />
+      {/* Notifikasi pesanan masuk (realtime) */}
+      <OrderAlertStack
+        toasts={toasts}
+        onDismiss={dismissToast}
+        onSelect={() => navigate('/orders', { state: { from: '/berandakasir' } })}
       />
     </div>
   );
