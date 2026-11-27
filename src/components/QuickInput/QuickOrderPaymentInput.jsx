@@ -1,7 +1,9 @@
 import React, {useState, useEffect} from 'react';
-import {CreditCard, QrCode, Building2, Trash2, Plus, Tag, FileText, Coins, X, AlertCircle} from 'lucide-react';
+import {CreditCard, QrCode, Building2, Trash2, Plus, Tag, FileText, Coins, X, AlertCircle, Eye} from 'lucide-react';
 import AnimatedButton from '../Design/AnimatedButton';
 import AddPaymentModal from './AddPaymentModal';
+import PhotoGalleryModal from '../Modal/PhotoGalleryModal';
+import { getPhotoUrl } from '../../utils/photoUrlHelper';
 import {getPaymentMethodIcon, calculatePaymentStatus, formatPaymentStatus, getPaymentStatusColors, formatNumber, formatCurrency} from '../../utils/labelFormatter';
 import instance from '../../config/api';
 
@@ -47,6 +49,7 @@ const QuickOrderPaymentInput = ({
   firstOrderBonusEnabled = true // Flag enable/disable first order bonus (dari points settings)
 }) => {
   const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
+  const [proofPhotoUrl, setProofPhotoUrl] = useState(null);
   const [usePoints, setUsePoints] = useState(false);
   const [pointsSettings, setPointsSettings] = useState({ enabled: false, redeem_rate: 50, min_redeem: 100, earn_rate: 1000 }); // Default: disabled, 50 (100 poin = Rp 5.000), min_redeem: 100, earn_rate: 1000
 
@@ -656,13 +659,24 @@ const QuickOrderPaymentInput = ({
                     )}
                   </div>
                 </div>
-                <button
-                  className="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-500 transition-colors"
-                  title="Hapus Pembayaran"
-                  onClick={() => handleRemovePayment(idx)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {p.evidence_photo && (
+                    <button
+                      className="p-2 rounded-full bg-telaga-100 hover:bg-telaga-200 text-telaga-600 transition-colors"
+                      title="Lihat bukti pembayaran"
+                      onClick={() => setProofPhotoUrl(getPhotoUrl(p.evidence_photo))}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                  )}
+                  <button
+                    className="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-500 transition-colors"
+                    title="Hapus Pembayaran"
+                    onClick={() => handleRemovePayment(idx)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             );
           })}
@@ -691,6 +705,12 @@ const QuickOrderPaymentInput = ({
         onAddPayment={handleAddPaymentFromModal}
         total={total || 0}
         paid={paid || 0}
+      />
+
+      <PhotoGalleryModal
+        isOpen={!!proofPhotoUrl}
+        onClose={() => setProofPhotoUrl(null)}
+        photos={proofPhotoUrl ? [{ url_photo: proofPhotoUrl }] : []}
       />
 
     </div>

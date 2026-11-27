@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { X, CreditCard, DollarSign, QrCode, Trash2, Plus, Tag, FileText, Edit2, Coins, Info, AlertCircle, Calendar } from 'lucide-react';
+import { X, CreditCard, DollarSign, QrCode, Trash2, Plus, Tag, FileText, Edit2, Coins, Info, AlertCircle, Calendar, Eye } from 'lucide-react';
 import { useOrderDetail } from '../../context/OrderDetailContext';
 import AnimatedButton from '../../../../components/Design/AnimatedButton';
 import { useCurrentUserRole } from '../../../../utils/roleValidator';
 import AddPaymentModal from '../../../../components/QuickInput/AddPaymentModal';
 import QuickOrderDiscountModal from '../../../../components/QuickInput/QuickOrderDiscountModal';
+import PhotoGalleryModal from '../../../../components/Modal/PhotoGalleryModal';
+import { getPhotoUrl } from '../../../../utils/photoUrlHelper';
 import { getActiveShiftId } from '../../../../utils/userProfileHelper';
 import { getDiscounts } from '../../api/orderApi';
 import {
@@ -92,6 +94,7 @@ const formatPaymentDate = (dateString) => {
 const PaymentStep = ({ total, discounts = [], submitOrderData = null, fetchOrderData = null }) => {
   const { state, actions } = useOrderDetail();
   const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
+  const [proofPhotoUrl, setProofPhotoUrl] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [paymentToDelete, setPaymentToDelete] = useState(null);
   const [showEditDateModal, setShowEditDateModal] = useState(false);
@@ -1009,24 +1012,35 @@ const PaymentStep = ({ total, discounts = [], submitOrderData = null, fetchOrder
                     )}
                   </div>
                 </div>
-                {isSuperAdmin && (
-                  <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {p.evidence_photo && (
                     <button
-                      onClick={() => handleEditPaymentDate(p)}
+                      onClick={() => setProofPhotoUrl(getPhotoUrl(p.evidence_photo))}
                       className="p-2 text-telaga-500 hover:text-telaga-700 hover:bg-telaga-50 rounded-lg transition-colors duration-200"
-                      title="Edit tanggal pembayaran"
+                      title="Lihat bukti pembayaran"
                     >
-                      <Calendar className="w-4 h-4" />
+                      <Eye className="w-4 h-4" />
                     </button>
-                    <button
-                      onClick={() => handleDeletePayment(idx)}
-                      className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-200"
-                      title="Hapus pembayaran"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
+                  )}
+                  {isSuperAdmin && (
+                    <>
+                      <button
+                        onClick={() => handleEditPaymentDate(p)}
+                        className="p-2 text-telaga-500 hover:text-telaga-700 hover:bg-telaga-50 rounded-lg transition-colors duration-200"
+                        title="Edit tanggal pembayaran"
+                      >
+                        <Calendar className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeletePayment(idx)}
+                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                        title="Hapus pembayaran"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -1231,6 +1245,12 @@ const PaymentStep = ({ total, discounts = [], submitOrderData = null, fetchOrder
           }}
         />
       )}
+
+      <PhotoGalleryModal
+        isOpen={!!proofPhotoUrl}
+        onClose={() => setProofPhotoUrl(null)}
+        photos={proofPhotoUrl ? [{ url_photo: proofPhotoUrl }] : []}
+      />
 
     </div>
   );
